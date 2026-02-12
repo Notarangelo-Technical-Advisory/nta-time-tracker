@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { appVersion } from '../environments/version';
 
 @Component({
   selector: 'app-root',
@@ -22,6 +23,7 @@ import { AuthService } from './services/auth.service';
         </ul>
         <div class="sidebar-footer">
           <button class="btn-logout" (click)="authService.signOutUser()">Sign Out</button>
+          <span class="version-label">v{{ version }}</span>
         </div>
       </nav>
       <main class="main-content">
@@ -36,4 +38,5 @@ import { AuthService } from './services/auth.service';
 })
 export class AppComponent {
   authService = inject(AuthService);
+  version = appVersion;
 }

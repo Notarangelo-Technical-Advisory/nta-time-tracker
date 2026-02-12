@@ -64,6 +64,14 @@
   border-top: 1px solid rgba($color-white, 0.1);
 }
 
+.version-label {
+  display: block;
+  margin-top: $spacing-sm;
+  font-size: $font-size-xs;
+  color: rgba($color-white, 0.4);
+  text-align: center;
+}
+
 .btn-logout {
   @include button-base;
   background: rgba($color-white, 0.1);
