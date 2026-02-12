@@ -1,0 +1,452 @@
+// =============================================================================
+// MIXINS
+// =============================================================================
+// Reusable patterns and component mixins
+
+@import 'tokens';
+
+// =============================================================================
+// BUTTON MIXINS
+// =============================================================================
+
+@mixin button-base {
+  padding: $button-padding-y $button-padding-x;
+  border: none;
+  border-radius: $button-border-radius;
+  font-weight: $button-font-weight;
+  font-size: $button-font-size;
+  cursor: pointer;
+  transition: $button-transition;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
+  &:disabled {
+    opacity: $opacity-disabled;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+}
+
+@mixin button-primary {
+  @include button-base;
+  background: $color-primary;
+  color: $color-white;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-dark;
+    transform: translateY(-2px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+}
+
+@mixin button-secondary {
+  @include button-base;
+  background: $color-gray-50;
+  color: $color-text-primary;
+  border: $border-width-thin solid $color-gray-300;
+
+  &:hover:not(:disabled) {
+    background: $color-gray-200;
+  }
+}
+
+@mixin button-outline {
+  @include button-base;
+  background: transparent;
+  color: $color-primary;
+  border: $border-width-base solid $color-primary;
+
+  &:hover:not(:disabled) {
+    background: $color-primary;
+    color: $color-white;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin button-danger {
+  @include button-base;
+  background: $color-danger;
+  color: $color-white;
+
+  &:hover:not(:disabled) {
+    background: $color-danger-dark;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin button-warning {
+  @include button-base;
+  background: $color-warning-bg;
+  color: $color-warning-text;
+
+  &:hover:not(:disabled) {
+    background: $color-warning-darker;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin button-sm {
+  padding: $button-padding-y-sm $button-padding-x-sm;
+  font-size: $font-size-sm;
+}
+
+// =============================================================================
+// CARD MIXINS
+// =============================================================================
+
+@mixin card-base {
+  background: $card-bg;
+  border-radius: $card-border-radius;
+  box-shadow: $card-shadow;
+  padding: $card-padding;
+  min-height: $card-min-height;
+}
+
+@mixin card-hover {
+  transition: $transition-transform, box-shadow $transition-base $transition-easing-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+}
+
+// =============================================================================
+// FORM MIXINS
+// =============================================================================
+
+@mixin form-control {
+  width: 100%;
+  padding: $input-padding-y $input-padding-x;
+  border: $input-border-width solid $input-border-color;
+  border-radius: $input-border-radius;
+  font-size: $input-font-size;
+  transition: $transition-border;
+
+  &:focus {
+    outline: none;
+    border-color: $input-focus-border-color;
+    box-shadow: $input-focus-shadow;
+  }
+
+  &.error {
+    border-color: $color-danger;
+  }
+}
+
+@mixin form-label {
+  display: block;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+@mixin form-group {
+  margin-bottom: $spacing-lg;
+}
+
+@mixin form-error {
+  color: $color-danger;
+  font-size: $font-size-base;
+  margin-top: $spacing-sm;
+}
+
+// =============================================================================
+// BADGE MIXINS
+// =============================================================================
+
+@mixin badge-base {
+  padding: $badge-padding-y $badge-padding-x;
+  border-radius: $badge-border-radius;
+  font-size: $badge-font-size;
+  font-weight: $badge-font-weight;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+@mixin badge-status-active {
+  @include badge-base;
+  background: $color-success-light;
+  color: $color-success-text;
+}
+
+@mixin badge-status-inactive {
+  @include badge-base;
+  background: $color-danger-light;
+  color: $color-danger-text;
+}
+
+@mixin badge-role-admin {
+  @include badge-base;
+  background: $color-role-admin;
+  color: $color-role-admin-text;
+}
+
+@mixin badge-status-unbilled {
+  @include badge-base;
+  background: $color-status-unbilled-light;
+  color: $color-status-unbilled-text;
+}
+
+@mixin badge-status-billed {
+  @include badge-base;
+  background: $color-status-billed-light;
+  color: $color-status-billed-text;
+}
+
+@mixin badge-status-paid {
+  @include badge-base;
+  background: $color-status-paid-light;
+  color: $color-status-paid-text;
+}
+
+@mixin badge-status-overdue {
+  @include badge-base;
+  background: $color-status-overdue-light;
+  color: $color-status-overdue-text;
+}
+
+@mixin badge-status-draft {
+  @include badge-base;
+  background: $color-status-draft-light;
+  color: $color-status-draft-text;
+}
+
+// =============================================================================
+// LOADING SPINNER MIXINS
+// =============================================================================
+
+@mixin spinner-base($size: 40px, $border-width: 4px, $color: $color-primary) {
+  width: $size;
+  height: $size;
+  border: $border-width solid $color-gray-100;
+  border-top: $border-width solid $color;
+  border-radius: $border-radius-full;
+  animation: spin 1s linear infinite;
+}
+
+@mixin spinner-sm {
+  @include spinner-base(1rem, 0.125rem, currentColor);
+}
+
+@mixin spinner-inline {
+  display: inline-block;
+  @include spinner-base(0.875rem, 0.125rem, currentColor);
+}
+
+// =============================================================================
+// MODAL MIXINS
+// =============================================================================
+
+@mixin modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: $z-index-modal;
+}
+
+@mixin modal-content {
+  background: $color-white;
+  border-radius: $card-border-radius;
+  padding: $spacing-xl;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: $shadow-xl;
+
+  h3 {
+    color: $color-text-primary;
+    margin: 0 0 $spacing-lg 0;
+    font-size: $font-size-2xl;
+  }
+}
+
+// =============================================================================
+// MESSAGE MIXINS
+// =============================================================================
+
+@mixin message-base {
+  padding: $spacing-base;
+  border-radius: $border-radius-base;
+  margin: $spacing-base 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  p {
+    margin: 0;
+  }
+}
+
+@mixin message-error {
+  @include message-base;
+  color: $color-danger-text;
+  background: $color-danger-bg;
+  border: $border-width-thin solid darken($color-danger-bg, 5%);
+}
+
+@mixin message-success {
+  @include message-base;
+  color: $color-success-text;
+  background: $color-success-light;
+  border: $border-width-thin solid darken($color-success-light, 5%);
+}
+
+// =============================================================================
+// LAYOUT MIXINS
+// =============================================================================
+
+@mixin container($max-width: $container-max-width-sm) {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: $spacing-xl;
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// =============================================================================
+// TEXT MIXINS
+// =============================================================================
+
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-center {
+  text-align: center;
+}
+
+// =============================================================================
+// RESPONSIVE MIXINS
+// =============================================================================
+
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-desktop) {
+    @content;
+  }
+}
+
+// =============================================================================
+// UTILITY MIXINS
+// =============================================================================
+
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@mixin clearfix {
+  &::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+// =============================================================================
+// LINK MIXINS
+// =============================================================================
+
+// Partner/Profile Link Mixin - Standard interactive link style for profile and partner links
+// Used for clickable profile names, partner recommendations, etc.
+@mixin partner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $border-radius-sm;
+  color: $color-secondary;
+  text-decoration: none;
+  font-weight: $font-weight-medium;
+  transition: background $transition-fast, color $transition-fast;
+
+  &:hover,
+  &:focus {
+    background: $color-bg-alt;
+    color: $color-secondary-dark;
+    text-decoration: underline;
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-secondary;
+    outline-offset: 2px;
+  }
+}
+
+// =============================================================================
+// ANIMATION KEYFRAMES
+// =============================================================================
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,372 @@
+// =============================================================================
+// COMPONENTS
+// =============================================================================
+// Global component classes built from tokens and mixins
+
+@import 'tokens';
+@import 'mixins';
+
+// =============================================================================
+// BUTTONS
+// =============================================================================
+
+.btn {
+  @include button-base;
+}
+
+.btn-primary {
+  @include button-primary;
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+.btn-outline {
+  @include button-outline;
+}
+
+.btn-danger {
+  @include button-danger;
+}
+
+.btn-danger-critical {
+  @include button-danger;
+  background: darken($color-danger, 10%);
+  border-color: darken($color-danger, 10%);
+  font-weight: $font-weight-bold;
+
+  &:hover:not(:disabled) {
+    background: darken($color-danger, 15%);
+    border-color: darken($color-danger, 15%);
+    transform: translateY(-1px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: $shadow-sm;
+  }
+}
+
+.btn-warning {
+  @include button-warning;
+}
+
+.btn-sm {
+  @include button-sm;
+}
+
+// =============================================================================
+// CARDS
+// =============================================================================
+
+.card {
+  @include card-base;
+  margin: $spacing-base 0;
+}
+
+.card-hover {
+  @include card-hover;
+}
+
+// =============================================================================
+// FORMS
+// =============================================================================
+
+.form-group {
+  @include form-group;
+}
+
+.form-label {
+  @include form-label;
+}
+
+.form-control {
+  @include form-control;
+}
+
+.form-error {
+  @include form-error;
+}
+
+// Radio groups and options
+.radio-group {
+  display: flex;
+  gap: $spacing-base;
+  flex-wrap: wrap;
+  margin-top: $spacing-sm;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 10px 16px;
+  border: $border-width-base solid $color-border-input;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  transition: $transition-all;
+  min-width: 130px;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    border-color: $color-primary;
+    background: $color-primary-lighter;
+    transform: scale(1.05);
+  }
+
+  &.selected {
+    border-color: $color-primary;
+    background: $color-primary-light;
+    color: $color-primary;
+  }
+
+  input {
+    margin: 0;
+  }
+}
+
+// =============================================================================
+// BADGES
+// =============================================================================
+
+.badge {
+  @include badge-base;
+
+  &.active {
+    @include badge-status-active;
+  }
+
+  &.inactive {
+    @include badge-status-inactive;
+  }
+}
+
+.role-badge {
+  @include badge-base;
+
+  &.admin {
+    @include badge-role-admin;
+  }
+}
+
+.status-badge {
+  @include badge-base;
+
+  &.unbilled { @include badge-status-unbilled; }
+  &.billed { @include badge-status-billed; }
+  &.paid { @include badge-status-paid; }
+  &.overdue { @include badge-status-overdue; }
+  &.draft { @include badge-status-draft; }
+  &.cancelled { @include badge-status-inactive; }
+  &.sent {
+    @include badge-base;
+    background: $color-info-light;
+    color: $color-info-text;
+  }
+}
+
+// =============================================================================
+// TABLES
+// =============================================================================
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: $spacing-md $spacing-base;
+    text-align: left;
+    border-bottom: $border-width-thin solid $color-border;
+  }
+
+  th {
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    text-transform: uppercase;
+    letter-spacing: $letter-spacing-wide;
+  }
+
+  tbody tr {
+    transition: $transition-background;
+
+    &:hover {
+      background: $color-bg-hover;
+    }
+  }
+}
+
+// =============================================================================
+// LOADING & SPINNERS
+// =============================================================================
+
+.loading {
+  @include flex-center;
+  padding: $spacing-xl;
+}
+
+.spinner {
+  @include spinner-base;
+}
+
+.spinner-border {
+  @include spinner-inline;
+}
+
+.spinner-border-sm {
+  @include spinner-sm;
+}
+
+.inline-spinner {
+  @include spinner-inline;
+  margin-right: $spacing-sm;
+}
+
+.loading-spinner {
+  @include spinner-base;
+}
+
+// =============================================================================
+// MODALS
+// =============================================================================
+
+.modal-overlay {
+  @include modal-overlay;
+}
+
+.modal-content {
+  @include modal-content;
+}
+
+// =============================================================================
+// MESSAGES
+// =============================================================================
+
+.error,
+.error-message {
+  @include message-error;
+}
+
+.success,
+.success-message {
+  @include message-success;
+}
+
+// =============================================================================
+// LAYOUT UTILITIES
+// =============================================================================
+
+.container {
+  @include container;
+}
+
+.text-center {
+  @include text-center;
+}
+
+.flex-center {
+  @include flex-center;
+}
+
+.flex-between {
+  @include flex-between;
+}
+
+// =============================================================================
+// SPACING UTILITIES
+// =============================================================================
+
+.mb-2 { margin-bottom: $spacing-base; }
+.mb-3 { margin-bottom: $spacing-lg; }
+.mb-4 { margin-bottom: $spacing-xl; }
+.mt-2 { margin-top: $spacing-base; }
+.mt-3 { margin-top: $spacing-lg; }
+.mt-4 { margin-top: $spacing-xl; }
+.me-2 { margin-right: $spacing-sm; }
+
+// =============================================================================
+// MISC COMPONENTS
+// =============================================================================
+
+.section-header {
+  border-bottom: $border-width-base solid $color-primary;
+  padding-bottom: $spacing-base;
+  margin-bottom: $spacing-xl;
+}
+
+// Empty states
+.empty-state {
+  text-align: center;
+  padding: $spacing-4xl $spacing-xl;
+  background: $color-white;
+  border-radius: $card-border-radius;
+  box-shadow: $card-shadow;
+
+  h3 {
+    color: $color-text-primary;
+    margin-bottom: $spacing-base;
+    font-size: $font-size-2xl;
+  }
+
+  p {
+    color: $color-text-muted;
+    margin-bottom: $spacing-xl;
+    font-size: $font-size-lg;
+  }
+}
+
+// Loading states
+.loading-state,
+.loading-container {
+  text-align: center;
+  padding: $spacing-3xl $spacing-xl;
+
+  .loading-spinner {
+    margin: 0 auto $spacing-base;
+  }
+
+  .loading-text,
+  p {
+    color: $color-text-muted;
+    margin: 0;
+  }
+}
+
+// Error states
+.error-state {
+  text-align: center;
+  padding: $spacing-4xl;
+  background: $color-white;
+  border-radius: $card-border-radius;
+  box-shadow: $card-shadow;
+
+  h2 {
+    color: $color-danger;
+    margin-bottom: $spacing-base;
+  }
+
+  p {
+    color: $color-text-muted;
+    margin-bottom: $spacing-xl;
+  }
+}
+
+// =============================================================================
+// WIDTH UTILITIES
+// =============================================================================
+
+.w-100 {
+  width: 100%;
+}
+
+// =============================================================================
+// ACCESSIBILITY
+// =============================================================================
+
+.sr-only {
+  @include sr-only;
+}

@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isCustomerUser(customerId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.role == 'customer' &&
+        get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.customerId == customerId;
+    }
+
+    // User profiles
+    match /userProfiles/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Customers - admin full CRUD, customers read their own
+    match /customers/{customerId} {
+      allow read: if isAdmin() || isCustomerUser(customerId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Projects - admin full CRUD, customers read their own
+    match /projects/{projectId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() &&
+         exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.customerId ==
+         resource.data.customerId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Time entries - admin full CRUD, customers read their own
+    match /timeEntries/{entryId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() &&
+         exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.customerId ==
+         resource.data.customerId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Invoices - admin full CRUD, customers read their own
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() ||
+        (isAuthenticated() &&
+         exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.customerId ==
+         resource.data.customerId);
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

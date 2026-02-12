@@ -1,0 +1,38 @@
+@import 'styles/tokens';
+@import 'styles/mixins';
+@import 'styles/components';
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $font-family-base;
+  background: $color-gray-50;
+  min-height: 100vh;
+  color: $color-text-primary;
+  line-height: $line-height-relaxed;
+}
+
+@include tablet {
+  .container {
+    padding: $spacing-base;
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .app-nav, .sidebar, nav {
+    display: none !important;
+  }
+
+  @page {
+    margin: 0.75in;
+    size: letter;
+  }
+}

@@ -1,0 +1,338 @@
+// =============================================================================
+// DESIGN TOKENS
+// =============================================================================
+// Central source of truth for all design values in the application.
+// Use these variables throughout the app to ensure consistency.
+
+// =============================================================================
+// COLORS
+// =============================================================================
+
+// Primary Colors
+$color-primary: #1E3A8A;
+$color-primary-hover: #0F172A;
+$color-primary-dark: #0F172A;
+$color-primary-darker: #1E40AF;
+$color-primary-light: #DBEAFE;
+$color-primary-lighter: #EFF6FF;
+$color-primary-bg: #EFF6FF;
+
+// Secondary Colors
+$color-secondary: #10B981;
+$color-secondary-dark: #059669;
+$color-secondary-light: #D1FAE5;
+$color-secondary-lighter: #ECFDF5;
+
+// Semantic Colors
+$color-success: #10B981;
+$color-success-dark: #059669;
+$color-success-light: #D1FAE5;
+$color-success-lighter: #ECFDF5;
+$color-success-bg: #D1FAE5;
+$color-success-text: #065F46;
+$color-success-text-dark: #047857;
+
+$color-danger: #EF4444;
+$color-danger-dark: #DC2626;
+$color-danger-darker: #B91C1C;
+$color-danger-light: #FEE2E2;
+$color-danger-lighter: #FEF2F2;
+$color-danger-bg: #FEE2E2;
+$color-danger-text: #991B1B;
+
+$color-warning: #F59E0B;
+$color-warning-dark: #D97706;
+$color-warning-darker: #B45309;
+$color-warning-light: #FEF3C7;
+$color-warning-bg: #FCD34D;
+$color-warning-text: #92400E;
+
+$color-info: #3B82F6;
+$color-info-light: #DBEAFE;
+$color-info-text: #1E40AF;
+
+// Neutral Colors
+$color-text-primary: #2c3e50;
+$color-text-secondary: #34495e;
+$color-text-body: #495057;
+$color-text-muted: #6c757d;
+$color-text-light: #adb5bd;
+$color-text-disabled: #dee2e6;
+
+$color-white: #ffffff;
+$color-black: #000000;
+
+$color-gray-50: #f8f9fa;
+$color-gray-100: #f0f0f0;
+$color-gray-200: #e9ecef;
+$color-gray-300: #dee2e6;
+$color-gray-400: #e0e0e0;
+$color-gray-500: #adb5bd;
+$color-gray-600: #6c757d;
+$color-gray-700: #495057;
+$color-gray-800: #343a40;
+$color-gray-900: #212529;
+
+// Status Colors
+$color-status-unbilled: $color-warning;
+$color-status-unbilled-light: $color-warning-light;
+$color-status-unbilled-text: $color-warning-text;
+$color-status-billed: $color-primary;
+$color-status-billed-light: $color-primary-light;
+$color-status-billed-text: $color-primary;
+$color-status-paid: $color-success;
+$color-status-paid-light: $color-success-light;
+$color-status-paid-text: $color-success-text;
+$color-status-overdue: $color-danger;
+$color-status-overdue-light: $color-danger-light;
+$color-status-overdue-text: $color-danger-text;
+$color-status-draft: $color-text-muted;
+$color-status-draft-light: $color-gray-100;
+$color-status-draft-text: $color-text-muted;
+
+// Role Colors
+$color-role-admin: #e3f2fd;
+$color-role-admin-text: #1565c0;
+
+// Background Colors
+$color-bg-body: #ffffff;
+$color-bg-gradient-start: #1E3A8A;
+$color-bg-gradient-end: #0F172A;
+$color-bg-card: #ffffff;
+$color-bg-alt: #f8f9fa;
+$color-bg-secondary: #f8f9fa;
+$color-bg-hover: #f0f4ff;
+$color-bg-light: #f8f9ff;
+$color-bg-info-light: #e7f3ff;
+$color-bg-warning-light: #fff9e6;
+$color-bg-primary-hover: #f0f4ff;
+
+// Border Colors
+$color-border: #e0e0e0;
+$color-border-light: #f0f0f0;
+$color-border-focus: #1E3A8A;
+$color-border-input: #ddd;
+
+// =============================================================================
+// SPACING
+// =============================================================================
+
+$spacing-xs: 0.25rem;    // 4px
+$spacing-sm: 0.5rem;     // 8px
+$spacing-md: 0.75rem;    // 12px
+$spacing-base: 1rem;     // 16px
+$spacing-lg: 1.5rem;     // 24px
+$spacing-xl: 2rem;       // 32px
+$spacing-2xl: 2.5rem;    // 40px
+$spacing-3xl: 3rem;      // 48px
+$spacing-4xl: 4rem;      // 64px
+
+// =============================================================================
+// TYPOGRAPHY
+// =============================================================================
+
+// Font Families
+$font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+// Font Sizes
+$font-size-xs: 0.625rem;    // 10px
+$font-size-sm: 0.75rem;     // 12px
+$font-size-base: 0.875rem;  // 14px
+$font-size-md: 1rem;        // 16px
+$font-size-lg: 1.125rem;    // 18px
+$font-size-xl: 1.25rem;     // 20px
+$font-size-2xl: 1.5rem;     // 24px
+$font-size-3xl: 1.875rem;   // 30px
+$font-size-4xl: 2rem;       // 32px
+$font-size-5xl: 2.5rem;     // 40px
+$font-size-6xl: 3rem;       // 48px
+$font-size-7xl: 3.5rem;     // 56px
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-tight: 1.2;
+$line-height-base: 1.5;
+$line-height-relaxed: 1.6;
+
+// Letter Spacing
+$letter-spacing-tight: -0.5px;
+$letter-spacing-normal: 0;
+$letter-spacing-wide: 0.5px;
+
+// =============================================================================
+// SHADOWS
+// =============================================================================
+
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-base: 0 2px 10px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+$shadow-hover-primary: 0 4px 12px rgba(52, 152, 219, 0.15);
+$shadow-hover-secondary: 0 8px 24px rgba(52, 152, 219, 0.15);
+$shadow-hover-success: 0 4px 12px rgba(39, 174, 96, 0.15);
+$shadow-drop: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+
+// =============================================================================
+// BORDERS
+// =============================================================================
+
+$border-width-thin: 1px;
+$border-width-base: 2px;
+$border-width-thick: 4px;
+
+$border-radius-xs: 2px;
+$border-radius-sm: 4px;
+$border-radius-base: 6px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius-xl: 20px;
+$border-radius-pill: 9999px;
+$border-radius-full: 50%;
+
+// =============================================================================
+// TRANSITIONS
+// =============================================================================
+
+$transition-fast: 0.15s;
+$transition-base: 0.2s;
+$transition-slow: 0.3s;
+$transition-slowest: 0.8s;
+
+$transition-easing-base: ease;
+$transition-easing-in: ease-in;
+$transition-easing-out: ease-out;
+$transition-easing-in-out: ease-in-out;
+
+// Common Transitions
+$transition-all: all $transition-base $transition-easing-base;
+$transition-transform: transform $transition-base $transition-easing-base;
+$transition-color: color $transition-base $transition-easing-base;
+$transition-background: background-color $transition-base $transition-easing-base;
+$transition-border: border-color $transition-slow $transition-easing-base;
+
+// =============================================================================
+// BREAKPOINTS
+// =============================================================================
+
+$breakpoint-mobile: 480px;
+$breakpoint-tablet: 768px;
+$breakpoint-desktop: 1200px;
+$breakpoint-wide: 1400px;
+
+// =============================================================================
+// Z-INDEX SCALE
+// =============================================================================
+
+$z-index-base: 1;
+$z-index-dropdown: 100;
+$z-index-sticky: 200;
+$z-index-fixed: 300;
+$z-index-modal-backdrop: 900;
+$z-index-modal: 1000;
+$z-index-popover: 1100;
+$z-index-tooltip: 1200;
+
+// =============================================================================
+// CONTAINER & LAYOUT
+// =============================================================================
+
+$container-sm: 800px;
+$container-md: 1000px;
+$container-lg: 1200px;
+$container-xl: 1400px;
+
+// Legacy aliases
+$container-max-width-sm: $container-sm;
+$container-max-width-md: $container-lg;
+$container-max-width-lg: $container-xl;
+
+// =============================================================================
+// FORM ELEMENTS
+// =============================================================================
+
+$input-padding-y: 0.75rem;
+$input-padding-x: 0.75rem;
+$input-font-size: $font-size-md;
+$input-border-width: $border-width-base;
+$input-border-color: $color-border-input;
+$input-border-radius: $border-radius-base;
+$input-focus-border-color: $color-primary;
+$input-focus-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+
+// =============================================================================
+// BUTTONS
+// =============================================================================
+
+$button-padding-y: 0.75rem;
+$button-padding-x: 1.5rem;
+$button-padding-y-sm: 0.5rem;
+$button-padding-x-sm: 1rem;
+$button-font-size: $font-size-base;
+$button-font-weight: $font-weight-semibold;
+$button-border-radius: $border-radius-base;
+$button-transition: $transition-all;
+
+// =============================================================================
+// CARDS
+// =============================================================================
+
+$card-padding: $spacing-xl;
+$card-border-radius: $border-radius-lg;
+$card-shadow: $shadow-base;
+$card-bg: $color-bg-card;
+$card-min-height: 250px;
+
+// =============================================================================
+// BADGES
+// =============================================================================
+
+$badge-padding-y: 0.25rem;
+$badge-padding-x: 0.75rem;
+$badge-font-size: $font-size-sm;
+$badge-font-weight: $font-weight-semibold;
+$badge-border-radius: $border-radius-xl;
+
+// =============================================================================
+// MISC
+// =============================================================================
+
+$opacity-disabled: 0.6;
+$opacity-hover: 0.8;
+$opacity-high: 0.9;
+
+// =============================================================================
+// COMPONENT SIZES
+// =============================================================================
+
+// Avatar Sizes
+$avatar-size-sm: 32px;
+$avatar-size-base: 40px;
+$avatar-size-md: 48px;
+$avatar-size-lg: 64px;
+
+// Icon Sizes
+$icon-size-sm: 20px;
+$icon-size-base: 24px;
+$icon-size-md: 32px;
+$icon-size-lg: 40px;
+$icon-size-xl: 48px;
+
+// Common widths
+$width-xs: 280px;
+$width-sm: 400px;
+$width-md: 600px;
+$width-lg: 800px;
+
+// Common heights
+$height-xs: 8px;
+$height-sm: 20px;
+$height-md: 150px;
+$height-lg: 200px;

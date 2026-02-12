@@ -1,0 +1,138 @@
+@import '../styles/tokens';
+@import '../styles/mixins';
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  background: linear-gradient(180deg, $color-primary 0%, $color-primary-dark 100%);
+  color: $color-white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: $z-index-fixed;
+}
+
+.sidebar-header {
+  padding: $spacing-xl;
+  border-bottom: 1px solid rgba($color-white, 0.1);
+
+  h2 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    margin: 0;
+  }
+}
+
+.nav-links {
+  list-style: none;
+  padding: $spacing-base 0;
+  flex: 1;
+
+  li {
+    a {
+      display: block;
+      padding: $spacing-md $spacing-xl;
+      color: rgba($color-white, 0.8);
+      text-decoration: none;
+      font-weight: $font-weight-medium;
+      transition: $transition-all;
+      border-left: 3px solid transparent;
+
+      &:hover {
+        background: rgba($color-white, 0.1);
+        color: $color-white;
+      }
+
+      &.active {
+        background: rgba($color-white, 0.15);
+        color: $color-white;
+        border-left-color: $color-secondary;
+      }
+    }
+  }
+}
+
+.sidebar-footer {
+  padding: $spacing-base $spacing-xl;
+  border-top: 1px solid rgba($color-white, 0.1);
+}
+
+.btn-logout {
+  @include button-base;
+  background: rgba($color-white, 0.1);
+  color: $color-white;
+  width: 100%;
+  border: 1px solid rgba($color-white, 0.2);
+
+  &:hover {
+    background: rgba($color-white, 0.2);
+  }
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  padding: $spacing-xl;
+  background: $color-gray-50;
+  min-height: 100vh;
+}
+
+@include tablet {
+  .sidebar {
+    width: 200px;
+  }
+
+  .main-content {
+    margin-left: 200px;
+  }
+}
+
+@include mobile {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: relative;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .sidebar-header {
+    flex: 1;
+  }
+
+  .nav-links {
+    display: flex;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0;
+
+    li a {
+      white-space: nowrap;
+      border-left: none;
+      border-bottom: 3px solid transparent;
+
+      &.active {
+        border-left-color: transparent;
+        border-bottom-color: $color-secondary;
+      }
+    }
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}
