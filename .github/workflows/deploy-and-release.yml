@@ -53,7 +53,7 @@ jobs:
           BUMP="patch"
           if echo "$COMMITS" | grep -qiE "BREAKING CHANGE|\[major\]"; then
             BUMP="major"
-          elif echo "$COMMITS" | grep -qiE "^feat:|\[minor\]"; then
+          elif echo "$COMMITS" | grep -qiE "^feat(\(.+\))?:|\[minor\]"; then
             BUMP="minor"
           fi
 
@@ -159,14 +159,26 @@ jobs:
           Commits in this release:
           ${COMMIT_LOG}
 
-          Format as markdown:
-          ## What's Changed
-          - [bullet points of user-facing changes]
+          Categorize each commit by its conventional commit prefix and format as markdown using these sections (omit any section with no matching commits):
 
-          ## Technical Details
-          - [bullet points of technical improvements, if any]
+          ## ✨ Features
+          - [commits starting with feat:]
 
-          Keep it brief and focused on impact. Do not include a heading with the version number."
+          ## 🐛 Bug Fixes
+          - [commits starting with fix:]
+
+          ## ⚡ Performance Improvements
+          - [commits starting with perf:]
+
+          ## 📝 Documentation
+          - [commits starting with docs:]
+
+          ## ♻️ Code Refactoring
+          - [commits starting with refactor:]
+
+          Commits with chore: or no recognized prefix should be omitted unless they contain meaningful user-facing changes, in which case place them in the most relevant section.
+
+          Keep it brief and focused on impact. Do not include a heading with the version number. Strip the prefix from each bullet point — describe the change naturally."
 
           ESCAPED_PROMPT=$(jq -Rs '.' <<< "$PROMPT")
 
@@ -187,7 +199,26 @@ jobs:
             NOTES=$(echo "$BODY" | jq -r '.content[0].text')
           else
             echo "::warning::AI release notes failed (HTTP ${HTTP_CODE}), falling back to commit log"
-            NOTES=$(printf "## What's Changed\n\n%s" "$COMMIT_LOG")
+
+            # Categorize commits by conventional commit prefix
+            FEATS=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ - feat(\(.+\))?:" | sed 's/^[a-f0-9]* - feat\([^)]*\)\?: /- /' || true)
+            FIXES=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ - fix(\(.+\))?:" | sed 's/^[a-f0-9]* - fix\([^)]*\)\?: /- /' || true)
+            PERFS=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ - perf(\(.+\))?:" | sed 's/^[a-f0-9]* - perf\([^)]*\)\?: /- /' || true)
+            DOCS=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ - docs(\(.+\))?:" | sed 's/^[a-f0-9]* - docs\([^)]*\)\?: /- /' || true)
+            REFACTORS=$(echo "$COMMIT_LOG" | grep -E "^[a-f0-9]+ - refactor(\(.+\))?:" | sed 's/^[a-f0-9]* - refactor\([^)]*\)\?: /- /' || true)
+            OTHER=$(echo "$COMMIT_LOG" | grep -vE "^[a-f0-9]+ - (feat|fix|perf|docs|refactor|chore)(\(.+\))?:" | sed 's/^[a-f0-9]* - /- /' || true)
+
+            NOTES=""
+            [ -n "$FEATS" ] && NOTES="${NOTES}## ✨ Features\n${FEATS}\n\n"
+            [ -n "$FIXES" ] && NOTES="${NOTES}## 🐛 Bug Fixes\n${FIXES}\n\n"
+            [ -n "$PERFS" ] && NOTES="${NOTES}## ⚡ Performance Improvements\n${PERFS}\n\n"
+            [ -n "$DOCS" ] && NOTES="${NOTES}## 📝 Documentation\n${DOCS}\n\n"
+            [ -n "$REFACTORS" ] && NOTES="${NOTES}## ♻️ Code Refactoring\n${REFACTORS}\n\n"
+            [ -n "$OTHER" ] && NOTES="${NOTES}## Other Changes\n${OTHER}\n\n"
+
+            # If nothing was categorized, just dump the raw log
+            [ -z "$NOTES" ] && NOTES=$(printf "## What's Changed\n\n%s" "$COMMIT_LOG")
+            NOTES=$(printf "%b" "$NOTES")
           fi
 
           EOF_MARKER=$(openssl rand -hex 16)
