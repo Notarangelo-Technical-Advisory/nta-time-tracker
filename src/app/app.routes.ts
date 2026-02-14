@@ -26,6 +26,8 @@ export const routes: Routes = [
   { path: 'invoices/generate', loadComponent: () => import('./components/invoices/invoice-generate.component').then(m => m.InvoiceGenerateComponent), canActivate: [authGuard, adminGuard] },
   { path: 'invoices/:id', loadComponent: () => import('./components/invoices/invoice-detail.component').then(m => m.InvoiceDetailComponent), canActivate: [authGuard, adminGuard] },
 
+  { path: 'users', loadComponent: () => import('./components/users/user-list.component').then(m => m.UserListComponent), canActivate: [authGuard, adminGuard] },
+
   { path: 'portal', loadComponent: () => import('./components/portal/portal-dashboard.component').then(m => m.PortalDashboardComponent), canActivate: [authGuard, customerGuard] },
   { path: 'portal/invoices/:id', loadComponent: () => import('./components/portal/portal-invoice-view.component').then(m => m.PortalInvoiceViewComponent), canActivate: [authGuard, customerGuard] },
 

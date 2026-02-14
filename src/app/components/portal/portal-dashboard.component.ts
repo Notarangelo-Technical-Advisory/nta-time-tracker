@@ -1,16 +1,20 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { InvoiceService } from '../../services/invoice.service';
+import { CustomerService } from '../../services/customer.service';
+import { ProjectService } from '../../services/project.service';
 import { TimeEntry } from '../../models/time-entry.model';
 import { Invoice } from '../../models/invoice.model';
+import { Project } from '../../models/project.model';
 
 @Component({
   selector: 'app-portal-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -29,27 +33,50 @@ import { Invoice } from '../../models/invoice.model';
             <span class="card-label">Unbilled Hours</span>
             <span class="card-value warning">{{ unbilledHours }}</span>
           </div>
-          <div class="summary-card">
-            <span class="card-label">Billed Hours</span>
-            <span class="card-value primary">{{ billedHours }}</span>
+          <div class="summary-card estimate-card">
+            <span class="card-label">Est. Next Invoice</span>
+            <span class="card-value danger">\${{ estimatedInvoice.toFixed(2) }}</span>
+            <span class="card-subtitle">Based on {{ unbilledHours }} unbilled hrs</span>
           </div>
           <div class="summary-card">
             <span class="card-label">Outstanding</span>
-            <span class="card-value danger">\${{ outstandingTotal.toFixed(2) }}</span>
+            <span class="card-value primary">\${{ outstandingTotal.toFixed(2) }}</span>
           </div>
           <div class="summary-card">
-            <span class="card-label">Paid</span>
+            <span class="card-label">Total Paid</span>
             <span class="card-value success">\${{ paidTotal.toFixed(2) }}</span>
           </div>
         </div>
 
-        <!-- Recent Time Entries -->
+        <!-- Time Entries with Filters -->
         <div class="section">
-          <h2>Recent Time Entries</h2>
-          <div class="empty-hint" *ngIf="recentEntries.length === 0">
-            <p>No time entries recorded yet.</p>
+          <div class="section-header">
+            <h2>Time Entries</h2>
           </div>
-          <table class="data-table" *ngIf="recentEntries.length > 0">
+          <div class="filters">
+            <div class="filter-group">
+              <label>From</label>
+              <input type="date" class="filter-input" [(ngModel)]="filterStartDate" (ngModelChange)="applyFilters()">
+            </div>
+            <div class="filter-group">
+              <label>To</label>
+              <input type="date" class="filter-input" [(ngModel)]="filterEndDate" (ngModelChange)="applyFilters()">
+            </div>
+            <div class="filter-group">
+              <label>Status</label>
+              <select class="filter-input" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+                <option value="">All</option>
+                <option value="unbilled">Unbilled</option>
+                <option value="billed">Billed</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            <button class="btn-clear" *ngIf="filterStartDate || filterEndDate || filterStatus" (click)="clearFilters()">Clear</button>
+          </div>
+          <div class="empty-hint" *ngIf="filteredEntries.length === 0">
+            <p>No time entries found.</p>
+          </div>
+          <table class="data-table" *ngIf="filteredEntries.length > 0">
             <thead>
               <tr>
                 <th>Date</th>
@@ -59,7 +86,7 @@ import { Invoice } from '../../models/invoice.model';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let entry of recentEntries">
+              <tr *ngFor="let entry of displayedEntries">
                 <td class="date-cell">{{ formatDate(entry.date) }}</td>
                 <td class="hours-cell">{{ entry.durationHours }}</td>
                 <td>{{ entry.description || '—' }}</td>
@@ -71,9 +98,14 @@ import { Invoice } from '../../models/invoice.model';
               </tr>
             </tbody>
           </table>
+          <div class="show-more" *ngIf="filteredEntries.length > displayLimit">
+            <button class="btn-show-more" (click)="showMore()">
+              Show more ({{ filteredEntries.length - displayLimit }} remaining)
+            </button>
+          </div>
         </div>
 
-        <!-- Recent Invoices -->
+        <!-- Invoices -->
         <div class="section">
           <h2>Invoices</h2>
           <div class="empty-hint" *ngIf="invoices.length === 0">
@@ -171,6 +203,15 @@ import { Invoice } from '../../models/invoice.model';
         &.danger { color: $color-danger; }
         &.success { color: $color-success; }
       }
+
+      .card-subtitle {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+      }
+    }
+
+    .estimate-card {
+      border: 2px solid $color-danger-light;
     }
 
     .section {
@@ -181,6 +222,58 @@ import { Invoice } from '../../models/invoice.model';
         font-weight: $font-weight-bold;
         color: $color-text-primary;
         margin: 0 0 $spacing-base 0;
+      }
+    }
+
+    .section-header {
+      @include flex-between;
+      margin-bottom: $spacing-base;
+
+      h2 { margin: 0; }
+    }
+
+    .filters {
+      display: flex;
+      gap: $spacing-base;
+      align-items: flex-end;
+      margin-bottom: $spacing-base;
+      flex-wrap: wrap;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-xs;
+
+      label {
+        font-size: $font-size-xs;
+        text-transform: uppercase;
+        letter-spacing: $letter-spacing-wide;
+        color: $color-text-muted;
+        font-weight: $font-weight-semibold;
+      }
+    }
+
+    .filter-input {
+      @include form-control;
+      padding: $spacing-xs $spacing-sm;
+      font-size: $font-size-sm;
+      min-width: 140px;
+    }
+
+    .btn-clear {
+      padding: $spacing-xs $spacing-sm;
+      border: $border-width-thin solid $color-border;
+      border-radius: $border-radius-sm;
+      background: $color-white;
+      color: $color-text-muted;
+      font-size: $font-size-sm;
+      cursor: pointer;
+      transition: $transition-all;
+
+      &:hover {
+        background: $color-gray-50;
+        color: $color-text-primary;
       }
     }
 
@@ -248,6 +341,28 @@ import { Invoice } from '../../models/invoice.model';
       }
     }
 
+    .show-more {
+      text-align: center;
+      padding: $spacing-base;
+    }
+
+    .btn-show-more {
+      padding: $spacing-sm $spacing-xl;
+      border: $border-width-thin solid $color-border;
+      border-radius: $border-radius-sm;
+      background: $color-white;
+      color: $color-primary;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      cursor: pointer;
+      transition: $transition-all;
+
+      &:hover {
+        background: $color-primary-light;
+        border-color: $color-primary;
+      }
+    }
+
     .empty-hint {
       padding: $spacing-xl;
       background: $color-white;
@@ -271,15 +386,31 @@ export class PortalDashboardComponent implements OnInit {
   private authService = inject(AuthService);
   private timeEntryService = inject(TimeEntryService);
   private invoiceService = inject(InvoiceService);
+  private customerService = inject(CustomerService);
+  private projectService = inject(ProjectService);
 
   loading = true;
-  recentEntries: TimeEntry[] = [];
+  allEntries: TimeEntry[] = [];
+  filteredEntries: TimeEntry[] = [];
   invoices: Invoice[] = [];
+  projects: Project[] = [];
 
   unbilledHours = 0;
   billedHours = 0;
   outstandingTotal = 0;
   paidTotal = 0;
+  estimatedInvoice = 0;
+
+  filterStartDate = '';
+  filterEndDate = '';
+  filterStatus = '';
+  displayLimit = 20;
+
+  private defaultRate = 0;
+
+  get displayedEntries(): TimeEntry[] {
+    return this.filteredEntries.slice(0, this.displayLimit);
+  }
 
   async ngOnInit(): Promise<void> {
     const customerId = await this.authService.getCurrentUserCustomerId();
@@ -288,10 +419,22 @@ export class PortalDashboardComponent implements OnInit {
       return;
     }
 
+    this.customerService.getCustomer(customerId).subscribe(customer => {
+      this.defaultRate = customer?.hourlyRate || 0;
+      this.calculateEstimate();
+    });
+
+    this.projectService.getProjectsByCustomer(customerId).subscribe(projects => {
+      this.projects = projects;
+      this.calculateEstimate();
+    });
+
     this.timeEntryService.getTimeEntriesByCustomer(customerId).subscribe(entries => {
-      this.recentEntries = entries.slice(0, 10);
+      this.allEntries = entries;
+      this.applyFilters();
       this.unbilledHours = Math.round(entries.filter(e => e.status === 'unbilled').reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
       this.billedHours = Math.round(entries.filter(e => e.status !== 'unbilled').reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
+      this.calculateEstimate();
       this.loading = false;
     });
 
@@ -304,6 +447,53 @@ export class PortalDashboardComponent implements OnInit {
         .filter(i => i.status === 'paid')
         .reduce((sum, i) => sum + i.total, 0);
     });
+  }
+
+  applyFilters(): void {
+    let entries = this.allEntries;
+
+    if (this.filterStartDate) {
+      entries = entries.filter(e => e.date >= this.filterStartDate);
+    }
+    if (this.filterEndDate) {
+      entries = entries.filter(e => e.date <= this.filterEndDate);
+    }
+    if (this.filterStatus) {
+      entries = entries.filter(e => e.status === this.filterStatus);
+    }
+
+    this.filteredEntries = entries;
+  }
+
+  clearFilters(): void {
+    this.filterStartDate = '';
+    this.filterEndDate = '';
+    this.filterStatus = '';
+    this.applyFilters();
+  }
+
+  showMore(): void {
+    this.displayLimit += 20;
+  }
+
+  private calculateEstimate(): void {
+    const unbilledEntries = this.allEntries.filter(e => e.status === 'unbilled');
+    if (unbilledEntries.length === 0 || (this.defaultRate === 0 && this.projects.length === 0)) {
+      this.estimatedInvoice = 0;
+      return;
+    }
+
+    const projectRateMap = new Map<string, number>();
+    for (const p of this.projects) {
+      projectRateMap.set(p.id, p.hourlyRate || this.defaultRate);
+    }
+
+    this.estimatedInvoice = Math.round(
+      unbilledEntries.reduce((sum, e) => {
+        const rate = projectRateMap.get(e.projectId) || this.defaultRate;
+        return sum + (e.durationHours * rate);
+      }, 0) * 100
+    ) / 100;
   }
 
   formatDate(dateStr: string): string {

@@ -40,6 +40,9 @@ testem.log
 # Firebase
 .firebase/
 
+# Claude Code
+.claude/
+
 # System files
 .DS_Store
 Thumbs.db
