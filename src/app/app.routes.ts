@@ -31,5 +31,7 @@ export const routes: Routes = [
   { path: 'portal', loadComponent: () => import('./components/portal/portal-dashboard.component').then(m => m.PortalDashboardComponent), canActivate: [authGuard, customerGuard] },
   { path: 'portal/invoices/:id', loadComponent: () => import('./components/portal/portal-invoice-view.component').then(m => m.PortalInvoiceViewComponent), canActivate: [authGuard, customerGuard] },
 
+  { path: 'invite/:token', loadComponent: () => import('./components/auth/invite-signup.component').then(m => m.InviteSignupComponent), canActivate: [noAuthGuard] },
+
   { path: '**', redirectTo: '/auth' }
 ];

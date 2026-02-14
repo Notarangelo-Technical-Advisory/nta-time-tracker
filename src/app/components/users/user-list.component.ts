@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../services/user.service';
 import { CustomerService } from '../../services/customer.service';
+import { InviteService } from '../../services/invite.service';
 import { UserProfile } from '../../models/user.model';
 import { Customer } from '../../models/customer.model';
+import { Invite } from '../../models/invite.model';
 
 @Component({
   selector: 'app-user-list',
@@ -70,6 +72,102 @@ import { Customer } from '../../models/customer.model';
                 {{ user.role === 'admin' ? 'Make Customer' : 'Make Admin' }}
               </button>
               <button class="btn-action btn-action-danger" (click)="confirmDelete(user)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Invite Customer Section -->
+      <div class="section-header">
+        <h2>Invite Customer</h2>
+        <p class="subtitle">Create an invite link for a new customer user</p>
+      </div>
+
+      <div class="invite-form-card">
+        <div class="invite-form">
+          <div class="form-field">
+            <label for="inviteEmail">Email Address</label>
+            <input
+              id="inviteEmail"
+              type="email"
+              class="form-input"
+              placeholder="user@example.com"
+              [(ngModel)]="inviteEmail"
+            />
+          </div>
+          <div class="form-field">
+            <label for="inviteCustomer">Assign to Customer</label>
+            <select
+              id="inviteCustomer"
+              class="form-input"
+              [(ngModel)]="inviteCustomerId"
+            >
+              <option value="">— Select Customer —</option>
+              <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
+            </select>
+          </div>
+          <button
+            class="btn-primary"
+            (click)="createInvite()"
+            [disabled]="!inviteEmail || !inviteCustomerId || creatingInvite"
+          >
+            {{ creatingInvite ? 'Creating...' : 'Create Invite' }}
+          </button>
+        </div>
+
+        <div class="invite-error" *ngIf="inviteError">{{ inviteError }}</div>
+
+        <div class="invite-link-result" *ngIf="generatedLink">
+          <label>Invite Link (copy and share):</label>
+          <div class="link-copy-row">
+            <input type="text" class="form-input link-input" [value]="generatedLink" readonly />
+            <button class="btn-action" (click)="copyLink()">{{ linkCopied ? 'Copied!' : 'Copy' }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Invites Section -->
+      <div class="section-header" *ngIf="invites.length > 0">
+        <h2>Invites</h2>
+      </div>
+
+      <table class="data-table" *ngIf="invites.length > 0">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Expires</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let invite of invites">
+            <td class="email-cell">{{ invite.email }}</td>
+            <td>{{ invite.customerName }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="invite.status">
+                {{ invite.status | titlecase }}
+              </span>
+            </td>
+            <td class="date-cell">{{ formatDate(invite.createdAt) }}</td>
+            <td class="date-cell">{{ formatDate(invite.expiresAt) }}</td>
+            <td class="actions">
+              <button
+                class="btn-action"
+                *ngIf="invite.status === 'pending'"
+                (click)="copyInviteLink(invite)"
+              >
+                Copy Link
+              </button>
+              <button
+                class="btn-action btn-action-danger"
+                *ngIf="invite.status === 'pending'"
+                (click)="revokeInvite(invite)"
+              >
+                Revoke
+              </button>
             </td>
           </tr>
         </tbody>
@@ -149,12 +247,6 @@ import { Customer } from '../../models/customer.model';
     .email-cell { font-weight: $font-weight-semibold; }
     .date-cell { white-space: nowrap; color: $color-text-secondary; font-size: $font-size-sm; }
 
-    .status-badge {
-      @include badge-base;
-      &.admin { background: $color-primary-light; color: $color-primary; }
-      &.customer { background: $color-success-light; color: $color-success-text; }
-    }
-
     .customer-select {
       @include form-control;
       padding: $spacing-xs $spacing-sm;
@@ -227,20 +319,123 @@ import { Customer } from '../../models/customer.model';
       p { color: $color-text-muted; margin-bottom: $spacing-xl; }
     }
 
+    .section-header {
+      margin: $spacing-2xl 0 $spacing-base;
+
+      h2 {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-bold;
+        color: $color-text-primary;
+        margin: 0;
+      }
+
+      .subtitle {
+        color: $color-text-muted;
+        margin: $spacing-xs 0 0 0;
+      }
+    }
+
+    .invite-form-card {
+      background: $color-white;
+      border-radius: $card-border-radius;
+      box-shadow: $card-shadow;
+      padding: $spacing-xl;
+      margin-bottom: $spacing-xl;
+    }
+
+    .invite-form {
+      display: flex;
+      gap: $spacing-base;
+      align-items: flex-end;
+    }
+
+    .form-field {
+      flex: 1;
+
+      label {
+        display: block;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-secondary;
+        margin-bottom: $spacing-xs;
+      }
+    }
+
+    .form-input {
+      @include form-control;
+      width: 100%;
+    }
+
+    .btn-primary { @include button-primary; white-space: nowrap; }
+
+    .invite-error {
+      margin-top: $spacing-base;
+      padding: $spacing-sm $spacing-base;
+      background: $color-danger-lighter;
+      color: $color-danger;
+      border-radius: $border-radius-sm;
+      font-size: $font-size-sm;
+    }
+
+    .invite-link-result {
+      margin-top: $spacing-base;
+      padding-top: $spacing-base;
+      border-top: $border-width-thin solid $color-border;
+
+      label {
+        display: block;
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-secondary;
+        margin-bottom: $spacing-xs;
+      }
+    }
+
+    .link-copy-row {
+      display: flex;
+      gap: $spacing-sm;
+
+      .link-input {
+        flex: 1;
+        font-family: monospace;
+        font-size: $font-size-sm;
+      }
+    }
+
+    .status-badge {
+      @include badge-base;
+      &.admin { background: $color-primary-light; color: $color-primary; }
+      &.customer { background: $color-success-light; color: $color-success-text; }
+      &.pending { background: #fef3c7; color: #92400e; }
+      &.accepted { background: $color-success-light; color: $color-success-text; }
+      &.expired { background: $color-gray-50; color: $color-text-muted; }
+      &.revoked { background: $color-danger-lighter; color: $color-danger; }
+    }
+
     @include tablet {
       .page-header { flex-direction: column; gap: $spacing-base; align-items: flex-start; }
       .data-table { font-size: $font-size-sm; }
+      .invite-form { flex-direction: column; align-items: stretch; }
     }
   `]
 })
 export class UserListComponent implements OnInit {
   private userService = inject(UserService);
   private customerService = inject(CustomerService);
+  private inviteService = inject(InviteService);
 
   users: UserProfile[] = [];
   customers: Customer[] = [];
+  invites: Invite[] = [];
   loading = true;
   userToDelete: UserProfile | null = null;
+
+  inviteEmail = '';
+  inviteCustomerId = '';
+  creatingInvite = false;
+  inviteError = '';
+  generatedLink = '';
+  linkCopied = false;
 
   ngOnInit(): void {
     this.userService.getUsers().subscribe(users => {
@@ -250,6 +445,10 @@ export class UserListComponent implements OnInit {
 
     this.customerService.getCustomers().subscribe(customers => {
       this.customers = customers;
+    });
+
+    this.inviteService.getInvites().subscribe(invites => {
+      this.invites = invites;
     });
   }
 
@@ -270,6 +469,49 @@ export class UserListComponent implements OnInit {
     if (!this.userToDelete) return;
     await this.userService.deleteUser(this.userToDelete.uid);
     this.userToDelete = null;
+  }
+
+  async createInvite(): Promise<void> {
+    this.inviteError = '';
+    this.generatedLink = '';
+    this.creatingInvite = true;
+
+    const customer = this.customers.find(c => c.id === this.inviteCustomerId);
+    if (!customer) {
+      this.inviteError = 'Please select a customer.';
+      this.creatingInvite = false;
+      return;
+    }
+
+    try {
+      const invite = await this.inviteService.createInvite(
+        this.inviteEmail,
+        this.inviteCustomerId,
+        customer.companyName
+      );
+      this.generatedLink = this.inviteService.getInviteLink(invite.token);
+      this.inviteEmail = '';
+      this.inviteCustomerId = '';
+    } catch (err: any) {
+      this.inviteError = err.message || 'Failed to create invite.';
+    } finally {
+      this.creatingInvite = false;
+    }
+  }
+
+  copyLink(): void {
+    navigator.clipboard.writeText(this.generatedLink);
+    this.linkCopied = true;
+    setTimeout(() => this.linkCopied = false, 2000);
+  }
+
+  copyInviteLink(invite: Invite): void {
+    const link = this.inviteService.getInviteLink(invite.token);
+    navigator.clipboard.writeText(link);
+  }
+
+  async revokeInvite(invite: Invite): Promise<void> {
+    await this.inviteService.revokeInvite(invite.id);
   }
 
   formatDate(date: any): string {

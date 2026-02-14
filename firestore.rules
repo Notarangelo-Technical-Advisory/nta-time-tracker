@@ -64,6 +64,13 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Invites - admin CRUD, unauthenticated read for token validation
+    // UUID token (128-bit) acts as the secret, making unguessable
+    match /invites/{inviteId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
