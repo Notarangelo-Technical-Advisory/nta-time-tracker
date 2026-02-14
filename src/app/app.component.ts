@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from './services/auth.service';
@@ -17,11 +17,17 @@ import { appVersion } from '../environments/version';
           <span class="sidebar-subtitle">Time & Invoicing</span>
         </div>
         <ul class="nav-links">
-          <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-          <li><a routerLink="/time-entries" routerLinkActive="active">Time Entries</a></li>
-          <li><a routerLink="/customers" routerLinkActive="active">Customers</a></li>
-          <li><a routerLink="/projects" routerLinkActive="active">Projects</a></li>
-          <li><a routerLink="/invoices" routerLinkActive="active">Invoices</a></li>
+          <ng-container *ngIf="isAdmin">
+            <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+            <li><a routerLink="/time-entries" routerLinkActive="active">Time Entries</a></li>
+            <li><a routerLink="/customers" routerLinkActive="active">Customers</a></li>
+            <li><a routerLink="/projects" routerLinkActive="active">Projects</a></li>
+            <li><a routerLink="/invoices" routerLinkActive="active">Invoices</a></li>
+            <li><a routerLink="/users" routerLinkActive="active">Users</a></li>
+          </ng-container>
+          <ng-container *ngIf="!isAdmin && userRole === 'customer'">
+            <li><a routerLink="/portal" routerLinkActive="active">My Dashboard</a></li>
+          </ng-container>
         </ul>
         <div class="sidebar-footer">
           <button class="btn-logout" (click)="authService.signOutUser()">Sign Out</button>
@@ -38,7 +44,21 @@ import { appVersion } from '../environments/version';
   `,
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   authService = inject(AuthService);
   version = appVersion;
+  isAdmin = false;
+  userRole: 'admin' | 'customer' | null = null;
+
+  ngOnInit(): void {
+    this.authService.user$.subscribe(async user => {
+      if (user) {
+        this.userRole = await this.authService.getCurrentUserRole();
+        this.isAdmin = this.userRole === 'admin';
+      } else {
+        this.userRole = null;
+        this.isAdmin = false;
+      }
+    });
+  }
 }
