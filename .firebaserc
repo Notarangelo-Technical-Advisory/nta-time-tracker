@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "fta-invoice-tracking"
-  }
+  },
+  "targets": {
+    "fta-invoice-tracking": {
+      "hosting": {
+        "dial-app": [
+          "dial"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
