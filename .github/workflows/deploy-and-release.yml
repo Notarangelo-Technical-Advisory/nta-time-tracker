@@ -158,7 +158,7 @@ jobs:
       - name: Generate AI release notes
         id: generate
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHTROPIC_API_KEY }}
           NEW_VERSION: ${{ needs.version.outputs.new_tag }}
           COMMIT_LOG: ${{ needs.version.outputs.commit_log }}
         run: |
