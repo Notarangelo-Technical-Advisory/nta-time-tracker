@@ -8,10 +8,9 @@ import { Project } from '../../models/project.model';
 import { Customer } from '../../models/customer.model';
 
 @Component({
-  selector: 'app-project-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
+    selector: 'app-project-form',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <h1>{{ isEditMode ? 'Edit Project' : 'New Project' }}</h1>
@@ -86,7 +85,7 @@ import { Customer } from '../../models/customer.model';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

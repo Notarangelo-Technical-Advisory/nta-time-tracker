@@ -10,10 +10,9 @@ import { Customer } from '../../models/customer.model';
 import { Project } from '../../models/project.model';
 
 @Component({
-  selector: 'app-time-entry-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
+    selector: 'app-time-entry-form',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <h1>{{ isEditMode ? 'Edit Time Entry' : 'New Time Entry' }}</h1>
@@ -121,7 +120,7 @@ import { Project } from '../../models/project.model';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

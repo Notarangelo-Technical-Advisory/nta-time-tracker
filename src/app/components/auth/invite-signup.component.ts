@@ -10,10 +10,9 @@ import { UserProfile } from '../../models/user.model';
 import { USER_PROFILES } from '../../services/firestore-collections.const';
 
 @Component({
-  selector: 'app-invite-signup',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-invite-signup',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="auth-container">
       <div class="auth-card">
         <img src="assets/nta-logo.jpg" alt="NTA logo" class="auth-logo">
@@ -72,7 +71,7 @@ import { USER_PROFILES } from '../../services/firestore-collections.const';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

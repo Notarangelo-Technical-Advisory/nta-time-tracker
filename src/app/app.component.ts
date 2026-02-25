@@ -5,10 +5,9 @@ import { AuthService } from './services/auth.service';
 import { appVersion } from '../environments/version';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
-  template: `
+    selector: 'app-root',
+    imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+    template: `
     <div class="app-layout" *ngIf="authService.user$ | async as user; else noAuth">
       <nav class="sidebar">
         <div class="sidebar-header">
@@ -42,7 +41,7 @@ import { appVersion } from '../environments/version';
       <router-outlet></router-outlet>
     </ng-template>
   `,
-  styleUrl: './app.component.scss'
+    styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
   authService = inject(AuthService);

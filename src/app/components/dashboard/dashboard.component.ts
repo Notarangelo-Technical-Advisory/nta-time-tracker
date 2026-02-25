@@ -8,10 +8,9 @@ import { TimeEntry } from '../../models/time-entry.model';
 import { Invoice } from '../../models/invoice.model';
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-dashboard',
+    imports: [CommonModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <h1>Dashboard</h1>
@@ -134,7 +133,7 @@ import { Invoice } from '../../models/invoice.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

@@ -8,10 +8,9 @@ import { Project } from '../../models/project.model';
 import { Customer } from '../../models/customer.model';
 
 @Component({
-  selector: 'app-project-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  template: `
+    selector: 'app-project-list',
+    imports: [CommonModule, RouterLink, FormsModule],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <div>
@@ -105,7 +104,7 @@ import { Customer } from '../../models/customer.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

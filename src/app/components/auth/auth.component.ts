@@ -4,10 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-auth',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-auth',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="auth-container">
       <div class="auth-card">
         <img src="assets/nta-logo.jpg" alt="NTA logo" class="auth-logo">
@@ -51,7 +50,7 @@ import { AuthService } from '../../services/auth.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

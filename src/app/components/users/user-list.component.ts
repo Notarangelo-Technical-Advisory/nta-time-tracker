@@ -9,10 +9,9 @@ import { Customer } from '../../models/customer.model';
 import { Invite } from '../../models/invite.model';
 
 @Component({
-  selector: 'app-user-list',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-user-list',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <div>
@@ -185,7 +184,7 @@ import { Invite } from '../../models/invite.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

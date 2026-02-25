@@ -6,10 +6,9 @@ import { InvoiceService } from '../../services/invoice.service';
 import { Invoice } from '../../models/invoice.model';
 
 @Component({
-  selector: 'app-invoice-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  template: `
+    selector: 'app-invoice-list',
+    imports: [CommonModule, RouterLink, FormsModule],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <div>
@@ -81,7 +80,7 @@ import { Invoice } from '../../models/invoice.model';
       </table>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

@@ -12,10 +12,9 @@ import { Invoice } from '../../models/invoice.model';
 import { Project } from '../../models/project.model';
 
 @Component({
-  selector: 'app-portal-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  template: `
+    selector: 'app-portal-dashboard',
+    imports: [CommonModule, FormsModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <h1>My Dashboard</h1>
@@ -143,7 +142,7 @@ import { Project } from '../../models/project.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

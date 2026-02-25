@@ -6,10 +6,9 @@ import { CustomerService } from '../../services/customer.service';
 import { Customer } from '../../models/customer.model';
 
 @Component({
-  selector: 'app-customer-form',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
+    selector: 'app-customer-form',
+    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <h1>{{ isEditMode ? 'Edit Customer' : 'New Customer' }}</h1>
@@ -99,7 +98,7 @@ import { Customer } from '../../models/customer.model';
       </form>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

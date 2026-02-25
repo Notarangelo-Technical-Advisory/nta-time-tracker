@@ -10,10 +10,9 @@ import { Customer } from '../../models/customer.model';
 import { Project } from '../../models/project.model';
 
 @Component({
-  selector: 'app-time-entry-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  template: `
+    selector: 'app-time-entry-list',
+    imports: [CommonModule, RouterLink, FormsModule],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <div>
@@ -133,7 +132,7 @@ import { Project } from '../../models/project.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

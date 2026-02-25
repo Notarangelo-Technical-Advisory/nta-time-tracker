@@ -7,10 +7,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Component({
-  selector: 'app-invoice-detail',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
+    selector: 'app-invoice-detail',
+    imports: [CommonModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <div>
@@ -105,7 +104,7 @@ import autoTable from 'jspdf-autotable';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

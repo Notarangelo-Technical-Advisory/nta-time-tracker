@@ -11,10 +11,9 @@ import { Customer } from '../../models/customer.model';
 import { Project } from '../../models/project.model';
 
 @Component({
-  selector: 'app-invoice-generate',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  template: `
+    selector: 'app-invoice-generate',
+    imports: [CommonModule, FormsModule, RouterLink],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <h1>Generate Invoice</h1>
@@ -200,7 +199,7 @@ import { Project } from '../../models/project.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

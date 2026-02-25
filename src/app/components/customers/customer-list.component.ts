@@ -7,10 +7,9 @@ import { CustomerService } from '../../services/customer.service';
 import { Customer } from '../../models/customer.model';
 
 @Component({
-  selector: 'app-customer-list',
-  standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
-  template: `
+    selector: 'app-customer-list',
+    imports: [CommonModule, RouterLink, FormsModule],
+    template: `
     <div class="page-container">
       <div class="page-header">
         <div>
@@ -98,7 +97,7 @@ import { Customer } from '../../models/customer.model';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
 

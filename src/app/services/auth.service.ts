@@ -2,7 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { Auth, authState, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, User } from '@angular/fire/auth';
 import { Firestore, doc, setDoc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { USER_PROFILES } from './firestore-collections.const';
 import { UserProfile } from '../models/user.model';
 
@@ -65,21 +66,21 @@ export class AuthService {
   }
 
   async isCurrentUserAdmin(): Promise<boolean> {
-    const user = this.auth.currentUser;
+    const user = await firstValueFrom(this.user$.pipe(filter(u => u !== undefined)));
     if (!user) return false;
     const profile = await this.getUserProfile(user.uid);
     return profile?.role === 'admin' || false;
   }
 
   async getCurrentUserRole(): Promise<'admin' | 'customer' | null> {
-    const user = this.auth.currentUser;
+    const user = await firstValueFrom(this.user$.pipe(filter(u => u !== undefined)));
     if (!user) return null;
     const profile = await this.getUserProfile(user.uid);
     return profile?.role ?? null;
   }
 
   async getCurrentUserCustomerId(): Promise<string | null> {
-    const user = this.auth.currentUser;
+    const user = await firstValueFrom(this.user$.pipe(filter(u => u !== undefined)));
     if (!user) return null;
     const profile = await this.getUserProfile(user.uid);
     return profile?.customerId ?? null;
