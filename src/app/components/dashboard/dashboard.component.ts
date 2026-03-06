@@ -50,18 +50,22 @@ import { Invoice } from '../../models/invoice.model';
             <a routerLink="/time-entries/new" class="action-card">
               <span class="action-icon">+</span>
               <span class="action-label">Log Time</span>
+              <span class="action-desc">Record hours for a customer</span>
             </a>
             <a routerLink="/invoices/generate" class="action-card">
               <span class="action-icon">$</span>
               <span class="action-label">Generate Invoice</span>
+              <span class="action-desc">Turn unbilled hours into an invoice</span>
             </a>
             <a routerLink="/customers/new" class="action-card">
               <span class="action-icon">&#64;</span>
               <span class="action-label">Add Customer</span>
+              <span class="action-desc">Add a new billing customer</span>
             </a>
             <a routerLink="/projects/new" class="action-card">
               <span class="action-icon">#</span>
               <span class="action-label">New Project</span>
+              <span class="action-desc">Create a project for a customer</span>
             </a>
           </div>
         </div>
@@ -269,6 +273,13 @@ import { Invoice } from '../../models/invoice.model';
         font-weight: $font-weight-semibold;
         color: $color-text-primary;
         font-size: $font-size-sm;
+      }
+
+      .action-desc {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+        text-align: center;
+        line-height: $line-height-tight;
       }
     }
 
