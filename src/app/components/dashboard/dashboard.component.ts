@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { combineLatest } from 'rxjs';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { InvoiceService } from '../../services/invoice.service';
 import { CustomerService } from '../../services/customer.service';
@@ -369,12 +370,14 @@ export class DashboardComponent implements OnInit {
   activeCustomerCount = 0;
 
   ngOnInit(): void {
-    this.customerService.getActiveCustomers().subscribe(customers => {
-      this.activeCustomerCount = customers.length;
+    combineLatest([
+      this.customerService.getActiveCustomers(),
+      this.timeEntryService.getTimeEntries()
+    ]).subscribe(([customers, entries]) => {
+      this.customerMap.clear();
       customers.forEach(c => this.customerMap.set(c.id, c.companyName));
-    });
+      this.activeCustomerCount = customers.length;
 
-    this.timeEntryService.getTimeEntries().subscribe(entries => {
       this.recentEntries = entries.slice(0, 5);
       this.unbilledHours = Math.round(
         entries.filter(e => e.status === 'unbilled').reduce((sum, e) => sum + e.durationHours, 0) * 100
