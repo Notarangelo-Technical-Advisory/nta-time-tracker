@@ -111,63 +111,63 @@ import { Project } from '../../models/project.model';
             </div>
 
             <div *ngIf="!previewLoading && previewLineItems.length > 0">
-              <!-- Invoice header replica -->
-              <div class="invoice-doc-header">
-                <div class="invoice-from">
-                  <h4>Fractional Tech Advisory</h4>
-                  <p>Jack Notarangelo</p>
+              <!-- Invoice card: identical layout to invoice-detail -->
+              <div class="invoice-card">
+                <div class="invoice-header">
+                  <div class="invoice-from">
+                    <h3>Fractional Tech Advisory</h3>
+                    <p>Jack Notarangelo</p>
+                  </div>
+                  <div class="invoice-to">
+                    <h4>Bill To</h4>
+                    <p class="customer-name">{{ previewCustomer.companyName }}</p>
+                  </div>
                 </div>
-                <div class="invoice-to">
-                  <span class="bill-to-label">Bill To</span>
-                  <p class="customer-name">{{ previewCustomer.companyName }}</p>
-                </div>
-              </div>
 
-              <!-- Invoice meta -->
-              <div class="invoice-doc-meta">
-                <div class="meta-item">
-                  <span class="meta-label">Invoice #</span>
-                  <span class="meta-value meta-pending">Auto-generated</span>
+                <div class="invoice-meta">
+                  <div class="meta-item">
+                    <span class="meta-label">Invoice #</span>
+                    <span class="meta-value meta-pending">Auto-generated</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Issue Date</span>
+                    <span class="meta-value">{{ previewIssueDate }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Due Date</span>
+                    <span class="meta-value">{{ previewDueDate }}</span>
+                  </div>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">Issue Date</span>
-                  <span class="meta-value">{{ previewIssueDate }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-label">Due Date</span>
-                  <span class="meta-value">{{ previewDueDate }}</span>
-                </div>
-              </div>
 
-              <!-- Line items -->
-              <table class="invoice-doc-table">
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Hours</th>
-                    <th>Rate</th>
-                    <th class="text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let line of previewLineItems">
-                    <td>{{ line.projectName }}</td>
-                    <td>{{ line.hours }}</td>
-                    <td>\${{ line.rate.toFixed(2) }}/hr</td>
-                    <td class="text-right">\${{ line.amount.toFixed(2) }}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="subtotal-row">
-                    <td colspan="3">Subtotal</td>
-                    <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
-                  </tr>
-                  <tr class="total-row">
-                    <td colspan="3">Total</td>
-                    <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
-                  </tr>
-                </tfoot>
-              </table>
+                <table class="line-items-table">
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Hours</th>
+                      <th>Rate</th>
+                      <th class="text-right">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let line of previewLineItems">
+                      <td>{{ line.projectName }}</td>
+                      <td>{{ line.hours }}</td>
+                      <td>\${{ line.rate.toFixed(2) }}/hr</td>
+                      <td class="text-right">\${{ line.amount.toFixed(2) }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="subtotal-row">
+                      <td colspan="3">Subtotal</td>
+                      <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
+                    </tr>
+                    <tr class="total-row">
+                      <td colspan="3">Total</td>
+                      <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
 
               <div class="modal-actions">
                 <button class="btn-secondary" (click)="closePreview()">Close</button>
@@ -357,38 +357,50 @@ import { Project } from '../../models/project.model';
       padding: $spacing-2xl 0;
       p { color: $color-text-muted; }
     }
-    .invoice-doc-header {
+
+    /* Exact replica of invoice-detail styles */
+    .invoice-card {
+      background: $color-white;
+      border-radius: $card-border-radius;
+      box-shadow: $card-shadow;
+      padding: $spacing-2xl;
+      margin-bottom: $spacing-xl;
+    }
+
+    .invoice-header {
       display: flex;
       justify-content: space-between;
-      margin-bottom: $spacing-xl;
-      padding-bottom: $spacing-base;
+      margin-bottom: $spacing-2xl;
+      padding-bottom: $spacing-xl;
       border-bottom: 2px solid $color-primary;
 
-      h4 { font-size: $font-size-base; font-weight: $font-weight-bold; color: $color-primary; margin: 0 0 $spacing-xs 0; }
-      p { margin: 0; color: $color-text-secondary; font-size: $font-size-sm; }
-      .bill-to-label { font-size: $font-size-xs; text-transform: uppercase; letter-spacing: $letter-spacing-wide; color: $color-text-muted; display: block; margin-bottom: $spacing-xs; }
-      .customer-name { font-weight: $font-weight-semibold; font-size: $font-size-base; color: $color-text-primary; }
+      h3 { font-size: $font-size-xl; font-weight: $font-weight-bold; color: $color-primary; margin: 0 0 $spacing-xs 0; }
+      h4 { font-size: $font-size-sm; text-transform: uppercase; letter-spacing: $letter-spacing-wide; color: $color-text-muted; margin: 0 0 $spacing-xs 0; }
+      p { margin: 0; color: $color-text-secondary; }
+      .customer-name { font-weight: $font-weight-semibold; font-size: $font-size-lg; color: $color-text-primary; }
     }
-    .invoice-doc-meta {
+
+    .invoice-meta {
       display: flex;
-      gap: $spacing-xl;
-      margin-bottom: $spacing-xl;
+      gap: $spacing-2xl;
+      margin-bottom: $spacing-2xl;
 
       .meta-item { display: flex; flex-direction: column; gap: $spacing-xs; }
-      .meta-label { font-size: $font-size-xs; text-transform: uppercase; letter-spacing: $letter-spacing-wide; color: $color-text-muted; }
-      .meta-value { font-weight: $font-weight-semibold; font-size: $font-size-sm; }
+      .meta-label { font-size: $font-size-sm; text-transform: uppercase; letter-spacing: $letter-spacing-wide; color: $color-text-muted; }
+      .meta-value { font-weight: $font-weight-semibold; }
       .meta-pending { color: $color-text-muted; font-style: italic; font-weight: $font-weight-normal; }
     }
-    .invoice-doc-table {
+
+    .line-items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: $spacing-xl;
+      margin-bottom: $spacing-2xl;
 
-      th, td { padding: $spacing-md $spacing-base; text-align: left; border-bottom: $border-width-thin solid $color-border; font-size: $font-size-sm; }
-      th { font-weight: $font-weight-semibold; color: $color-text-secondary; font-size: $font-size-xs; text-transform: uppercase; letter-spacing: $letter-spacing-wide; background: $color-gray-50; }
+      th, td { padding: $spacing-md $spacing-base; text-align: left; border-bottom: $border-width-thin solid $color-border; }
+      th { font-weight: $font-weight-semibold; color: $color-text-secondary; font-size: $font-size-sm; text-transform: uppercase; letter-spacing: $letter-spacing-wide; background: $color-gray-50; }
       .text-right { text-align: right; }
-      .subtotal-row td { font-weight: $font-weight-semibold; }
-      .total-row td { font-size: $font-size-base; font-weight: $font-weight-bold; border-top: 2px solid $color-primary; border-bottom: none; }
+      .subtotal-row td { font-weight: $font-weight-semibold; border-bottom: $border-width-thin solid $color-border; }
+      .total-row td { font-size: $font-size-lg; font-weight: $font-weight-bold; border-top: 2px solid $color-primary; border-bottom: none; }
     }
     .modal-actions {
       display: flex;
