@@ -162,11 +162,13 @@ import autoTable from 'jspdf-autotable';
       padding-bottom: $spacing-xl;
       border-bottom: 2px solid $color-primary;
 
+      .invoice-from { text-align: center; }
+
       .invoice-logo {
         max-height: 48px;
         width: auto;
         display: block;
-        margin-bottom: $spacing-xs;
+        margin: 0 auto $spacing-xs;
       }
 
       h3 {
