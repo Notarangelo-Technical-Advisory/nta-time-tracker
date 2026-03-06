@@ -60,6 +60,7 @@ import autoTable from 'jspdf-autotable';
           <thead>
             <tr>
               <th>Project</th>
+              <th>Description</th>
               <th>Hours</th>
               <th>Rate</th>
               <th class="text-right">Amount</th>
@@ -68,6 +69,7 @@ import autoTable from 'jspdf-autotable';
           <tbody>
             <tr *ngFor="let item of invoice.lineItems">
               <td>{{ item.projectName }}</td>
+              <td class="desc-cell">{{ item.description || '—' }}</td>
               <td>{{ item.hours }}</td>
               <td>\${{ item.rate.toFixed(2) }}/hr</td>
               <td class="text-right">\${{ item.amount.toFixed(2) }}</td>
@@ -75,11 +77,11 @@ import autoTable from 'jspdf-autotable';
           </tbody>
           <tfoot>
             <tr class="subtotal-row">
-              <td colspan="3">Subtotal</td>
+              <td colspan="4">Subtotal</td>
               <td class="text-right">\${{ invoice.subtotal.toFixed(2) }}</td>
             </tr>
             <tr class="total-row">
-              <td colspan="3">Total</td>
+              <td colspan="4">Total</td>
               <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
             </tr>
           </tfoot>
@@ -228,6 +230,7 @@ import autoTable from 'jspdf-autotable';
       }
 
       .text-right { text-align: right; }
+      .desc-cell { color: $color-text-secondary; font-size: $font-size-sm; max-width: 200px; }
 
       .subtotal-row td {
         font-weight: $font-weight-semibold;
@@ -379,6 +382,7 @@ export class InvoiceDetailComponent implements OnInit {
     // Line items table
     const tableData = invoice.lineItems.map(item => [
       item.projectName,
+      item.description || '—',
       String(item.hours),
       `$${item.rate.toFixed(2)}/hr`,
       `$${item.amount.toFixed(2)}`
@@ -386,7 +390,7 @@ export class InvoiceDetailComponent implements OnInit {
 
     autoTable(doc, {
       startY: 68,
-      head: [['Project', 'Hours', 'Rate', 'Amount']],
+      head: [['Project', 'Description', 'Hours', 'Rate', 'Amount']],
       body: tableData,
       foot: [
         ['', '', 'Subtotal', `$${invoice.subtotal.toFixed(2)}`],
@@ -408,7 +412,7 @@ export class InvoiceDetailComponent implements OnInit {
         cellPadding: 5
       },
       columnStyles: {
-        3: { halign: 'right' }
+        4: { halign: 'right' }
       }
     });
 

@@ -39,31 +39,27 @@ export class InvoiceService {
   ): Promise<string> {
     const invoiceNumber = await this.generateInvoiceNumber();
 
-    // Group entries by project and create line items
-    const projectGroups = new Map<string, { hours: number; entries: TimeEntry[] }>();
-    for (const entry of entries) {
-      const existing = projectGroups.get(entry.projectId) || { hours: 0, entries: [] };
-      existing.hours += entry.durationHours;
-      existing.entries.push(entry);
-      projectGroups.set(entry.projectId, existing);
-    }
-
+    // One line item per time entry
     const lineItems: InvoiceLineItem[] = [];
     let subtotal = 0;
 
-    projectGroups.forEach((group, projectId) => {
-      const projectInfo = projectRates.get(projectId) || { name: projectId, rate: 0 };
-      const amount = Math.round(group.hours * projectInfo.rate * 100) / 100;
+    for (const entry of entries) {
+      const projectInfo = projectRates.get(entry.projectId) || { name: entry.projectId, rate: 0 };
+      const hours = Math.round(entry.durationHours * 100) / 100;
+      const amount = Math.round(hours * projectInfo.rate * 100) / 100;
       subtotal += amount;
 
-      lineItems.push({
-        projectId,
+      const lineItem: InvoiceLineItem = {
+        projectId: entry.projectId,
         projectName: projectInfo.name,
-        hours: Math.round(group.hours * 100) / 100,
+        hours,
         rate: projectInfo.rate,
         amount
-      });
-    });
+      };
+      if (entry.description) lineItem.description = `${entry.date} — ${entry.description}`;
+      else lineItem.description = entry.date;
+      lineItems.push(lineItem);
+    }
 
     subtotal = Math.round(subtotal * 100) / 100;
 

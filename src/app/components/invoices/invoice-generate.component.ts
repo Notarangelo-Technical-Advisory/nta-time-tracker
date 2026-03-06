@@ -158,6 +158,7 @@ import { Project } from '../../models/project.model';
             <thead>
               <tr>
                 <th>Project</th>
+                <th>Description</th>
                 <th>Hours</th>
                 <th>Rate</th>
                 <th>Amount</th>
@@ -166,6 +167,7 @@ import { Project } from '../../models/project.model';
             <tbody>
               <tr *ngFor="let item of previewLineItems">
                 <td>{{ item.projectName }}</td>
+                <td class="desc-cell">{{ item.description || '—' }}</td>
                 <td>{{ item.hours }}</td>
                 <td>\${{ item.rate }}/hr</td>
                 <td class="amount-cell">\${{ item.amount.toFixed(2) }}</td>
@@ -173,7 +175,7 @@ import { Project } from '../../models/project.model';
             </tbody>
             <tfoot>
               <tr class="total-row">
-                <td colspan="3">Total</td>
+                <td colspan="4">Total</td>
                 <td class="amount-cell">\${{ previewTotal.toFixed(2) }}</td>
               </tr>
             </tfoot>
@@ -503,7 +505,7 @@ export class InvoiceGenerateComponent implements OnInit {
   dueDate = '';
   invoiceNotes = '';
 
-  previewLineItems: { projectName: string; hours: number; rate: number; amount: number }[] = [];
+  previewLineItems: { projectName: string; description: string; hours: number; rate: number; amount: number }[] = [];
   previewTotal = 0;
 
   get totalUnbilledHours(): number {
@@ -594,29 +596,24 @@ export class InvoiceGenerateComponent implements OnInit {
   }
 
   private buildPreview(): void {
-    const groups = new Map<string, number>();
-    for (const entry of this.selectedEntries) {
-      const current = groups.get(entry.projectId) || 0;
-      groups.set(entry.projectId, current + entry.durationHours);
-    }
-
     this.previewLineItems = [];
     this.previewTotal = 0;
 
-    groups.forEach((hours, projectId) => {
-      const project = this.projectMap.get(projectId);
+    for (const entry of this.selectedEntries) {
+      const project = this.projectMap.get(entry.projectId);
       const rate = project?.hourlyRate || this.selectedCustomer?.hourlyRate || 0;
-      const roundedHours = Math.round(hours * 100) / 100;
-      const amount = Math.round(roundedHours * rate * 100) / 100;
+      const hours = Math.round(entry.durationHours * 100) / 100;
+      const amount = Math.round(hours * rate * 100) / 100;
       this.previewTotal += amount;
 
       this.previewLineItems.push({
-        projectName: project?.projectName || projectId,
-        hours: roundedHours,
+        projectName: project?.projectName || entry.projectId,
+        description: entry.description ? `${entry.date} — ${entry.description}` : entry.date,
+        hours,
         rate,
         amount
       });
-    });
+    }
 
     this.previewTotal = Math.round(this.previewTotal * 100) / 100;
   }

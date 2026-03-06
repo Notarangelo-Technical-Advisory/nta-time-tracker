@@ -143,6 +143,7 @@ import { Project } from '../../models/project.model';
                   <thead>
                     <tr>
                       <th>Project</th>
+                      <th>Description</th>
                       <th>Hours</th>
                       <th>Rate</th>
                       <th class="text-right">Amount</th>
@@ -151,6 +152,7 @@ import { Project } from '../../models/project.model';
                   <tbody>
                     <tr *ngFor="let line of previewLineItems">
                       <td>{{ line.projectName }}</td>
+                      <td class="desc-cell">{{ line.description || '—' }}</td>
                       <td>{{ line.hours }}</td>
                       <td>\${{ line.rate.toFixed(2) }}/hr</td>
                       <td class="text-right">\${{ line.amount.toFixed(2) }}</td>
@@ -158,11 +160,11 @@ import { Project } from '../../models/project.model';
                   </tbody>
                   <tfoot>
                     <tr class="subtotal-row">
-                      <td colspan="3">Subtotal</td>
+                      <td colspan="4">Subtotal</td>
                       <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
                     </tr>
                     <tr class="total-row">
-                      <td colspan="3">Total</td>
+                      <td colspan="4">Total</td>
                       <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
                     </tr>
                   </tfoot>
@@ -454,7 +456,7 @@ export class CustomerListComponent implements OnInit {
 
   previewCustomer: Customer | null = null;
   previewLoading = false;
-  previewLineItems: { projectName: string; hours: number; rate: number; amount: number }[] = [];
+  previewLineItems: { projectName: string; description: string; hours: number; rate: number; amount: number }[] = [];
   previewTotal = 0;
   previewIssueDate = '';
   previewDueDate = '';
@@ -495,22 +497,23 @@ export class CustomerListComponent implements OnInit {
     this.previewDueDate = this.formatDate(due.toISOString().split('T')[0]);
 
     this.timeEntryService.getUnbilledByCustomer(customer.id).subscribe(entries => {
-      const byProject = new Map<string, number>();
-      for (const entry of entries) {
-        byProject.set(entry.projectId, (byProject.get(entry.projectId) || 0) + entry.durationHours);
-      }
-
       this.previewLineItems = [];
       this.previewTotal = 0;
 
-      byProject.forEach((hours, projectId) => {
-        const project = this.projectMap.get(projectId);
+      for (const entry of entries) {
+        const project = this.projectMap.get(entry.projectId);
         const rate = project?.hourlyRate || customer.hourlyRate || 0;
-        const roundedHours = Math.round(hours * 100) / 100;
-        const amount = Math.round(roundedHours * rate * 100) / 100;
+        const hours = Math.round(entry.durationHours * 100) / 100;
+        const amount = Math.round(hours * rate * 100) / 100;
         this.previewTotal += amount;
-        this.previewLineItems.push({ projectName: project?.projectName || projectId, hours: roundedHours, rate, amount });
-      });
+        this.previewLineItems.push({
+          projectName: project?.projectName || entry.projectId,
+          description: entry.description ? `${entry.date} — ${entry.description}` : entry.date,
+          hours,
+          rate,
+          amount
+        });
+      }
 
       this.previewTotal = Math.round(this.previewTotal * 100) / 100;
       this.previewLoading = false;
