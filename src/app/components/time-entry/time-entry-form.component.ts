@@ -269,11 +269,13 @@ export class TimeEntryFormComponent implements OnInit {
   private entryId = '';
 
   ngOnInit(): void {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const currentHour = `${String(now.getHours()).padStart(2, '0')}:00`;
 
     this.form = this.fb.group({
       date: [today, Validators.required],
-      startTime: ['', Validators.required],
+      startTime: [currentHour, Validators.required],
       endTime: ['', Validators.required],
       customerId: ['', Validators.required],
       projectId: ['', Validators.required],
