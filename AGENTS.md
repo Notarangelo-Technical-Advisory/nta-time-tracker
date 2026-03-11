@@ -23,7 +23,11 @@ Always follow this feature-branch workflow:
    git ship
    ```
 
-   This creates a PR, squash-merges it to main, and cleans up the branch.
+   `git ship` squash-merges the feature branch into main and pushes to `origin/main` **first**, then attempts to create a GitHub PR for record-keeping, then deletes the branch. **The deploy to Firebase triggers on the push to main** — if the PR creation step fails (e.g., a `gh` token permissions error), the deploy has already been initiated. In that case, simply delete the remote branch manually:
+
+   ```bash
+   git push origin --delete <branch-name>
+   ```
 
 4. **Never commit directly to main.** All changes go through feature branches and PRs. Merging to main triggers the deploy-and-release CI/CD pipeline.
 
