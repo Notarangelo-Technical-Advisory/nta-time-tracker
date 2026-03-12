@@ -154,14 +154,45 @@ import { Project } from '../../models/project.model';
             </div>
           </div>
 
+          <div class="invoice-section-header">
+            <h3>Summary</h3>
+          </div>
           <table class="data-table preview-table">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Total Hours</th>
+                <th>Rate</th>
+                <th class="amount-cell">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of previewSummaryRows">
+                <td>{{ row.projectName }}</td>
+                <td>{{ row.hours }}</td>
+                <td>\${{ row.rate }}/hr</td>
+                <td class="amount-cell">\${{ row.amount.toFixed(2) }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="3">Total</td>
+                <td class="amount-cell">\${{ previewTotal.toFixed(2) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div class="invoice-section-header">
+            <h3>Details</h3>
+          </div>
+          <table class="data-table preview-table details-table">
             <thead>
               <tr>
                 <th>Project</th>
                 <th>Description</th>
                 <th>Hours</th>
                 <th>Rate</th>
-                <th>Amount</th>
+                <th class="amount-cell">Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -173,12 +204,6 @@ import { Project } from '../../models/project.model';
                 <td class="amount-cell">\${{ item.amount.toFixed(2) }}</td>
               </tr>
             </tbody>
-            <tfoot>
-              <tr class="total-row">
-                <td colspan="4">Total</td>
-                <td class="amount-cell">\${{ previewTotal.toFixed(2) }}</td>
-              </tr>
-            </tfoot>
           </table>
 
           <div class="form-group notes-group">
@@ -392,6 +417,22 @@ import { Project } from '../../models/project.model';
     }
     .amount-cell { font-weight: $font-weight-bold; text-align: right; }
 
+    .invoice-section-header {
+      margin: $spacing-xl 0 $spacing-sm 0;
+
+      h3 {
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+        text-transform: uppercase;
+        letter-spacing: $letter-spacing-wide;
+        color: $color-text-muted;
+        margin: 0;
+        padding-bottom: $spacing-xs;
+        border-bottom: 2px solid $color-primary;
+        display: inline-block;
+      }
+    }
+
     .preview-table {
       tbody tr { cursor: default; }
 
@@ -403,6 +444,10 @@ import { Project } from '../../models/project.model';
           padding-top: $spacing-base;
         }
       }
+    }
+
+    .details-table {
+      margin-bottom: $spacing-xl;
     }
 
     .selection-summary {
@@ -518,6 +563,20 @@ export class InvoiceGenerateComponent implements OnInit {
 
   get allSelected(): boolean {
     return this.unbilledEntries.length > 0 && this.selectedEntries.length === this.unbilledEntries.length;
+  }
+
+  get previewSummaryRows(): { projectName: string; hours: number; rate: number; amount: number }[] {
+    const map = new Map<string, { projectName: string; hours: number; rate: number; amount: number }>();
+    for (const item of this.previewLineItems) {
+      const existing = map.get(item.projectName);
+      if (existing) {
+        existing.hours = Math.round((existing.hours + item.hours) * 100) / 100;
+        existing.amount = Math.round((existing.amount + item.amount) * 100) / 100;
+      } else {
+        map.set(item.projectName, { projectName: item.projectName, hours: item.hours, rate: item.rate, amount: item.amount });
+      }
+    }
+    return Array.from(map.values());
   }
 
   ngOnInit(): void {

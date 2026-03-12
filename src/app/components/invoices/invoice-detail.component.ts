@@ -56,7 +56,38 @@ import autoTable from 'jspdf-autotable';
           </div>
         </div>
 
-        <table class="line-items-table">
+        <div class="invoice-section-header">
+          <h3>Summary</h3>
+        </div>
+        <table class="line-items-table summary-table">
+          <thead>
+            <tr>
+              <th>Project</th>
+              <th>Total Hours</th>
+              <th>Rate</th>
+              <th class="text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of invoiceSummaryRows">
+              <td>{{ row.projectName }}</td>
+              <td>{{ row.hours }}</td>
+              <td>\${{ row.rate.toFixed(2) }}/hr</td>
+              <td class="text-right">\${{ row.amount.toFixed(2) }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="3">Total</td>
+              <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="invoice-section-header">
+          <h3>Details</h3>
+        </div>
+        <table class="line-items-table details-table">
           <thead>
             <tr>
               <th>Project</th>
@@ -75,16 +106,6 @@ import autoTable from 'jspdf-autotable';
               <td class="text-right">\${{ item.amount.toFixed(2) }}</td>
             </tr>
           </tbody>
-          <tfoot>
-            <tr class="subtotal-row">
-              <td colspan="4">Subtotal</td>
-              <td class="text-right">\${{ invoice.subtotal.toFixed(2) }}</td>
-            </tr>
-            <tr class="total-row">
-              <td colspan="4">Total</td>
-              <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
-            </tr>
-          </tfoot>
         </table>
 
         <div class="invoice-notes" *ngIf="invoice.notes">
@@ -218,10 +239,26 @@ import autoTable from 'jspdf-autotable';
       }
     }
 
+    .invoice-section-header {
+      margin: $spacing-2xl 0 $spacing-base 0;
+
+      h3 {
+        font-size: $font-size-base;
+        font-weight: $font-weight-bold;
+        text-transform: uppercase;
+        letter-spacing: $letter-spacing-wide;
+        color: $color-text-muted;
+        margin: 0;
+        padding-bottom: $spacing-xs;
+        border-bottom: 2px solid $color-primary;
+        display: inline-block;
+      }
+    }
+
     .line-items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: $spacing-2xl;
+      margin-bottom: $spacing-xl;
 
       th, td {
         padding: $spacing-md $spacing-base;
@@ -241,17 +278,16 @@ import autoTable from 'jspdf-autotable';
       .text-right { text-align: right; }
       .desc-cell { color: $color-text-secondary; font-size: $font-size-sm; max-width: 200px; }
 
-      .subtotal-row td {
-        font-weight: $font-weight-semibold;
-        border-bottom: $border-width-thin solid $color-border;
-      }
-
       .total-row td {
         font-size: $font-size-lg;
         font-weight: $font-weight-bold;
         border-top: 2px solid $color-primary;
         border-bottom: none;
       }
+    }
+
+    .details-table {
+      margin-bottom: $spacing-2xl;
     }
 
     .invoice-notes {
@@ -326,6 +362,21 @@ export class InvoiceDetailComponent implements OnInit {
 
   invoice: Invoice | null = null;
   loading = true;
+
+  get invoiceSummaryRows(): { projectName: string; hours: number; rate: number; amount: number }[] {
+    if (!this.invoice) return [];
+    const map = new Map<string, { projectName: string; hours: number; rate: number; amount: number }>();
+    for (const item of this.invoice.lineItems) {
+      const existing = map.get(item.projectName);
+      if (existing) {
+        existing.hours = Math.round((existing.hours + item.hours) * 100) / 100;
+        existing.amount = Math.round((existing.amount + item.amount) * 100) / 100;
+      } else {
+        map.set(item.projectName, { projectName: item.projectName, hours: item.hours, rate: item.rate, amount: item.amount });
+      }
+    }
+    return Array.from(map.values());
+  }
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -403,7 +454,35 @@ export class InvoiceDetailComponent implements OnInit {
     doc.setTextColor(100);
     doc.text(`Status: ${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`, 140, 52);
 
-    // Line items table
+    // Summary table
+    const summaryData = this.invoiceSummaryRows.map(row => [
+      row.projectName,
+      String(row.hours),
+      `$${row.rate.toFixed(2)}/hr`,
+      `$${row.amount.toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+      startY: 68,
+      head: [['Project', 'Total Hours', 'Rate', 'Amount']],
+      body: summaryData,
+      foot: [
+        ['', '', 'Total', `$${invoice.total.toFixed(2)}`]
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+      footStyles: { fillColor: [245, 245, 245], textColor: [30, 30, 30], fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 5 },
+      columnStyles: { 3: { halign: 'right' } }
+    });
+
+    // Details section header
+    const summaryEndY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text('DETAILS', 14, summaryEndY);
+
+    // Details table
     const tableData = invoice.lineItems.map(item => [
       item.projectName,
       item.description || '—',
@@ -413,31 +492,13 @@ export class InvoiceDetailComponent implements OnInit {
     ]);
 
     autoTable(doc, {
-      startY: 68,
+      startY: summaryEndY + 5,
       head: [['Project', 'Description', 'Hours', 'Rate', 'Amount']],
       body: tableData,
-      foot: [
-        ['', '', 'Subtotal', `$${invoice.subtotal.toFixed(2)}`],
-        ['', '', 'Total', `$${invoice.total.toFixed(2)}`]
-      ],
       theme: 'striped',
-      headStyles: {
-        fillColor: [30, 58, 138],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      footStyles: {
-        fillColor: [245, 245, 245],
-        textColor: [30, 30, 30],
-        fontStyle: 'bold'
-      },
-      styles: {
-        fontSize: 10,
-        cellPadding: 5
-      },
-      columnStyles: {
-        4: { halign: 'right' }
-      }
+      headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 10, cellPadding: 5 },
+      columnStyles: { 4: { halign: 'right' } }
     });
 
     // Notes
