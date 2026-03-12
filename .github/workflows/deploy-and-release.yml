@@ -149,6 +149,15 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Enable required GCP APIs
+        run: |
+          gcloud services enable \
+            cloudfunctions.googleapis.com \
+            cloudbuild.googleapis.com \
+            artifactregistry.googleapis.com \
+            firebaseextensions.googleapis.com \
+            --project "$FIREBASE_PROJECT"
+
       - name: Deploy to Firebase
         env:
           NODE_TLS_REJECT_UNAUTHORIZED: '0'
