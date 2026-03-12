@@ -1,4 +1,4 @@
-import { onCall, HttpsError } from 'firebase-functions/lib/v2/providers/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 
 interface TimeEntryInput {
   date: string;
