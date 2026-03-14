@@ -555,7 +555,7 @@ export class StatusReportDetailComponent implements OnInit {
       const logoBuffer = await logoResponse.arrayBuffer();
       children.push(new Paragraph({
         children: [
-          new ImageRun({ data: logoBuffer, transformation: { width: 160, height: 56 }, type: 'jpg' }),
+          new ImageRun({ data: logoBuffer, transformation: { width: 104, height: 50 }, type: 'jpg' }),
         ],
         spacing: { after: 120 }
       }));
