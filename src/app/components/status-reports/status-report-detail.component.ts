@@ -1,12 +1,13 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { StatusReportService } from '../../services/status-report.service';
 import { StatusReport, StatusReportSection } from '../../models/status-report.model';
 
 @Component({
   selector: 'app-status-report-detail',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="page-container">
       <div class="page-header">
@@ -50,25 +51,45 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
 
         <!-- AI-generated sections -->
         <div class="sections-list">
-          <div class="report-section" *ngFor="let section of report.sections">
+          <div class="report-section" *ngFor="let section of report.sections; let si = index">
             <h2 class="project-name">{{ section.projectName }}</h2>
 
             <div class="section-block">
               <h3 class="block-label">Activities</h3>
               <ul class="bullet-list">
-                <li *ngFor="let item of section.activities">{{ item }}</li>
+                <li *ngFor="let item of section.activities; let ai = index" class="editable-item">
+                  <span *ngIf="!isEditing(si, 'activity', ai)" (click)="startEdit(si, 'activity', ai, item)" class="item-text">{{ item }}</span>
+                  <div *ngIf="isEditing(si, 'activity', ai)" class="edit-inline">
+                    <textarea [(ngModel)]="editValue" rows="2" class="edit-input" (keydown.escape)="cancelEdit()" (keydown.enter)="$event.preventDefault(); saveEdit(si, 'activity', ai)"></textarea>
+                    <div class="edit-actions">
+                      <button class="btn-save-sm" (click)="saveEdit(si, 'activity', ai)">Save</button>
+                      <button class="btn-cancel-sm" (click)="cancelEdit()">Cancel</button>
+                      <button class="btn-delete-sm" (click)="deleteItem(si, 'activity', ai)">Delete</button>
+                    </div>
+                  </div>
+                </li>
               </ul>
+              <button class="btn-add-item" (click)="addItem(si, 'activity')">+ Add activity</button>
             </div>
 
             <div class="section-block">
               <h3 class="block-label">Outcomes</h3>
               <ul class="bullet-list outcomes">
-                <li *ngFor="let item of section.outcomes"
+                <li *ngFor="let item of section.outcomes; let oi = index" class="editable-item"
                     [class.actual]="item.startsWith('Actual:')"
                     [class.potential]="item.startsWith('Potential:')">
-                  {{ item }}
+                  <span *ngIf="!isEditing(si, 'outcome', oi)" (click)="startEdit(si, 'outcome', oi, item)" class="item-text">{{ item }}</span>
+                  <div *ngIf="isEditing(si, 'outcome', oi)" class="edit-inline">
+                    <textarea [(ngModel)]="editValue" rows="2" class="edit-input" (keydown.escape)="cancelEdit()" (keydown.enter)="$event.preventDefault(); saveEdit(si, 'outcome', oi)"></textarea>
+                    <div class="edit-actions">
+                      <button class="btn-save-sm" (click)="saveEdit(si, 'outcome', oi)">Save</button>
+                      <button class="btn-cancel-sm" (click)="cancelEdit()">Cancel</button>
+                      <button class="btn-delete-sm" (click)="deleteItem(si, 'outcome', oi)">Delete</button>
+                    </div>
+                  </div>
                 </li>
               </ul>
+              <button class="btn-add-item" (click)="addItem(si, 'outcome')">+ Add outcome</button>
             </div>
           </div>
         </div>
@@ -205,6 +226,68 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
       }
     }
 
+    /* Editable items */
+    .editable-item {
+      .item-text {
+        cursor: pointer;
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin: -2px -4px;
+        transition: background-color 0.15s;
+
+        &:hover { background: $color-gray-100; }
+      }
+    }
+
+    .edit-inline {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-xs;
+      margin: $spacing-xs 0;
+    }
+
+    .edit-input {
+      width: 100%;
+      padding: $spacing-sm;
+      border: 1px solid $color-primary;
+      border-radius: 4px;
+      font-size: $font-size-base;
+      font-family: inherit;
+      line-height: $line-height-base;
+      resize: vertical;
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.15);
+    }
+
+    .edit-actions {
+      display: flex;
+      gap: $spacing-xs;
+    }
+
+    .btn-save-sm, .btn-cancel-sm, .btn-delete-sm {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: $font-size-sm;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-save-sm { background: $color-primary; color: white; &:hover { opacity: 0.9; } }
+    .btn-cancel-sm { background: $color-gray-100; color: $color-text-secondary; &:hover { background: $color-gray-200; } }
+    .btn-delete-sm { background: none; color: $color-danger; &:hover { background: rgba(239, 68, 68, 0.1); } }
+
+    .btn-add-item {
+      background: none;
+      border: 1px dashed $color-border-light;
+      color: $color-text-muted;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: $font-size-sm;
+      cursor: pointer;
+      margin-top: $spacing-xs;
+
+      &:hover { border-color: $color-primary; color: $color-primary; }
+    }
+
     /* Actions */
     .actions-bar {
       display: flex;
@@ -248,6 +331,9 @@ export class StatusReportDetailComponent implements OnInit {
   exportingPDF = false;
   exportingDOCX = false;
 
+  editKey: string | null = null;
+  editValue = '';
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
@@ -256,6 +342,50 @@ export class StatusReportDetailComponent implements OnInit {
       this.report = report;
       this.loading = false;
     });
+  }
+
+  isEditing(sectionIdx: number, type: string, itemIdx: number): boolean {
+    return this.editKey === `${sectionIdx}-${type}-${itemIdx}`;
+  }
+
+  startEdit(sectionIdx: number, type: string, itemIdx: number, value: string): void {
+    this.editKey = `${sectionIdx}-${type}-${itemIdx}`;
+    this.editValue = value;
+  }
+
+  cancelEdit(): void {
+    this.editKey = null;
+    this.editValue = '';
+  }
+
+  async saveEdit(sectionIdx: number, type: string, itemIdx: number): Promise<void> {
+    if (!this.report || !this.editValue.trim()) return;
+    const section = this.report.sections[sectionIdx];
+    const arr = type === 'activity' ? section.activities : section.outcomes;
+    arr[itemIdx] = this.editValue.trim();
+    this.editKey = null;
+    this.editValue = '';
+    await this.statusReportService.updateSections(this.report.id, this.report.sections);
+  }
+
+  async deleteItem(sectionIdx: number, type: string, itemIdx: number): Promise<void> {
+    if (!this.report) return;
+    const section = this.report.sections[sectionIdx];
+    const arr = type === 'activity' ? section.activities : section.outcomes;
+    arr.splice(itemIdx, 1);
+    this.editKey = null;
+    this.editValue = '';
+    await this.statusReportService.updateSections(this.report.id, this.report.sections);
+  }
+
+  async addItem(sectionIdx: number, type: string): Promise<void> {
+    if (!this.report) return;
+    const section = this.report.sections[sectionIdx];
+    const arr = type === 'activity' ? section.activities : section.outcomes;
+    const newIdx = arr.length;
+    arr.push('');
+    this.editKey = `${sectionIdx}-${type}-${newIdx}`;
+    this.editValue = '';
   }
 
   async updateStatus(status: StatusReport['status']): Promise<void> {

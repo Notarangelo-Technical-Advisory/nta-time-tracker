@@ -108,6 +108,11 @@ export class StatusReportService {
     await updateDoc(ref, { status, updatedAt: new Date() });
   }
 
+  async updateSections(id: string, sections: StatusReportSection[]): Promise<void> {
+    const ref = doc(this.firestore, STATUS_REPORTS, id);
+    await updateDoc(ref, { sections, updatedAt: new Date() });
+  }
+
   private async generateReportNumber(): Promise<string> {
     const year = new Date().getFullYear();
     const ref = collection(this.firestore, STATUS_REPORTS);
