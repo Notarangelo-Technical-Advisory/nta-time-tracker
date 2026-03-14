@@ -420,8 +420,10 @@ export class StatusReportDetailComponent implements OnInit {
   }
 
   private async exportPDF(report: StatusReport): Promise<void> {
-    const { default: jsPDF } = await import('jspdf');
-    const { default: autoTable } = await import('jspdf-autotable');
+    const jsPDFModule = await import('jspdf');
+    const jsPDF = jsPDFModule.default ?? jsPDFModule;
+    const autoTableModule = await import('jspdf-autotable') as any;
+    const autoTable = autoTableModule.default ?? autoTableModule;
 
     const doc = new jsPDF();
 
