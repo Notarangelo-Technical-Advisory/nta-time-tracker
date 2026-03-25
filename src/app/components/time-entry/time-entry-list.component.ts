@@ -81,13 +81,13 @@ import { Project } from '../../models/project.model';
       <table class="data-table" *ngIf="!loading && filteredEntries.length > 0">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Hours</th>
-            <th>Customer</th>
-            <th>Project</th>
+            <th class="sortable" (click)="sortBy('date')">Date <span class="sort-icon">{{ getSortIcon('date') }}</span></th>
+            <th class="sortable" (click)="sortBy('startTime')">Time <span class="sort-icon">{{ getSortIcon('startTime') }}</span></th>
+            <th class="sortable" (click)="sortBy('durationHours')">Hours <span class="sort-icon">{{ getSortIcon('durationHours') }}</span></th>
+            <th class="sortable" (click)="sortBy('customer')">Customer <span class="sort-icon">{{ getSortIcon('customer') }}</span></th>
+            <th class="sortable" (click)="sortBy('project')">Project <span class="sort-icon">{{ getSortIcon('project') }}</span></th>
             <th>Description</th>
-            <th>Status</th>
+            <th class="sortable" (click)="sortBy('status')">Status <span class="sort-icon">{{ getSortIcon('status') }}</span></th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -254,6 +254,20 @@ import { Project } from '../../models/project.model';
         text-transform: uppercase;
         letter-spacing: $letter-spacing-wide;
         background: $color-gray-50;
+
+        &.sortable {
+          cursor: pointer;
+          user-select: none;
+          white-space: nowrap;
+
+          &:hover { color: $color-primary; }
+
+          .sort-icon {
+            opacity: 0.4;
+            font-size: $font-size-xs;
+            margin-left: $spacing-xs;
+          }
+        }
       }
 
       tbody tr {
@@ -394,6 +408,9 @@ export class TimeEntryListComponent implements OnInit {
   loading = true;
   entryToDelete: TimeEntry | null = null;
 
+  sortColumn = 'date';
+  sortDirection: 'asc' | 'desc' = 'desc';
+
   totalHours = 0;
   unbilledHours = 0;
 
@@ -455,9 +472,64 @@ export class TimeEntryListComponent implements OnInit {
       result = result.filter(e => e.status === this.statusFilter);
     }
 
-    this.filteredEntries = result;
+    this.filteredEntries = this.sortEntries(result);
     this.totalHours = Math.round(result.reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
     this.unbilledHours = Math.round(result.filter(e => e.status === 'unbilled').reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
+  }
+
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'desc';
+    }
+    this.filteredEntries = this.sortEntries(this.filteredEntries);
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) return '↕';
+    return this.sortDirection === 'asc' ? '↑' : '↓';
+  }
+
+  private sortEntries(entries: TimeEntry[]): TimeEntry[] {
+    return [...entries].sort((a, b) => {
+      let valA: string | number;
+      let valB: string | number;
+
+      switch (this.sortColumn) {
+        case 'date':
+          valA = a.date + (a.startTime ?? '');
+          valB = b.date + (b.startTime ?? '');
+          break;
+        case 'startTime':
+          valA = a.startTime ?? '';
+          valB = b.startTime ?? '';
+          break;
+        case 'durationHours':
+          valA = a.durationHours;
+          valB = b.durationHours;
+          break;
+        case 'customer':
+          valA = this.getCustomerName(a.customerId).toLowerCase();
+          valB = this.getCustomerName(b.customerId).toLowerCase();
+          break;
+        case 'project':
+          valA = this.getProjectName(a.projectId).toLowerCase();
+          valB = this.getProjectName(b.projectId).toLowerCase();
+          break;
+        case 'status':
+          valA = a.status;
+          valB = b.status;
+          break;
+        default:
+          return 0;
+      }
+
+      if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
   }
 
   confirmDelete(entry: TimeEntry): void {
