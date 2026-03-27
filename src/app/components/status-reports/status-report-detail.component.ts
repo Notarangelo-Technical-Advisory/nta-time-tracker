@@ -119,6 +119,12 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
             <span *ngIf="exportingDOCX" class="spinner-sm"></span>
             {{ exportingDOCX ? 'Exporting...' : 'Export DOCX' }}
           </button>
+          <button
+            class="btn-danger"
+            *ngIf="report.status === 'draft'"
+            (click)="deleteReport()">
+            Delete Draft
+          </button>
         </div>
       </div>
     </div>
@@ -334,6 +340,13 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
       @include button-secondary;
     }
 
+    .btn-danger {
+      @include button-secondary;
+      color: $color-danger;
+      border-color: $color-danger;
+      &:hover { background: rgba(239, 68, 68, 0.08); }
+    }
+
     .btn-export {
       @include button-primary;
       background: $color-success;
@@ -359,6 +372,7 @@ export class StatusReportDetailComponent implements OnInit {
   private statusReportService = inject(StatusReportService);
   private timeEntryService = inject(TimeEntryService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
 
   report: StatusReport | null = null;
   loading = true;
@@ -439,6 +453,13 @@ export class StatusReportDetailComponent implements OnInit {
       const rank = (s: string) => s.startsWith('Actual:') ? 0 : s.startsWith('Potential:') ? 1 : 2;
       return rank(a) - rank(b);
     });
+  }
+
+  async deleteReport(): Promise<void> {
+    if (!this.report || this.report.status !== 'draft') return;
+    if (!confirm(`Delete draft report ${this.report.reportNumber}? This cannot be undone.`)) return;
+    await this.statusReportService.deleteReport(this.report.id);
+    this.router.navigate(['/status-reports']);
   }
 
   async updateStatus(status: StatusReport['status']): Promise<void> {

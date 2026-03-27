@@ -7,6 +7,7 @@ import {
   docData,
   addDoc,
   updateDoc,
+  deleteDoc,
   query,
   orderBy,
   getDocs,
@@ -138,6 +139,11 @@ export class StatusReportService {
     });
 
     return docRef.id;
+  }
+
+  async deleteReport(id: string): Promise<void> {
+    const ref = doc(this.firestore, STATUS_REPORTS, id);
+    await deleteDoc(ref);
   }
 
   async updateStatus(id: string, status: StatusReport['status']): Promise<void> {
