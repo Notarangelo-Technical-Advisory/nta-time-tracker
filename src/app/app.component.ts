@@ -23,6 +23,7 @@ import { appVersion } from '../environments/version';
             <li><a routerLink="/projects" routerLinkActive="active">Projects</a></li>
             <li><a routerLink="/invoices" routerLinkActive="active">Invoices</a></li>
             <li><a routerLink="/status-reports" routerLinkActive="active">Status Reports</a></li>
+            <li><a routerLink="/reports/hours" routerLinkActive="active">Hours Report</a></li>
             <li><a routerLink="/users" routerLinkActive="active">Users</a></li>
           </ng-container>
           <ng-container *ngIf="!isAdmin && userRole === 'customer'">

@@ -32,6 +32,8 @@ export const routes: Routes = [
 
   { path: 'users', loadComponent: () => import('./components/users/user-list.component').then(m => m.UserListComponent), canActivate: [authGuard, adminGuard] },
 
+  { path: 'reports/hours', loadComponent: () => import('./components/reports/hours-report.component').then(m => m.HoursReportComponent), canActivate: [authGuard, adminGuard] },
+
   { path: 'portal', loadComponent: () => import('./components/portal/portal-dashboard.component').then(m => m.PortalDashboardComponent), canActivate: [authGuard, customerGuard] },
   { path: 'portal/invoices/:id', loadComponent: () => import('./components/portal/portal-invoice-view.component').then(m => m.PortalInvoiceViewComponent), canActivate: [authGuard, customerGuard] },
 
