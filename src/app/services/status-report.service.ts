@@ -62,7 +62,9 @@ export class StatusReportService {
   ): Promise<StatusReportSection[]> {
     const callable = httpsCallable<GenerateStatusReportRequest, GenerateStatusReportResponse>(
       this.functions,
-      'generateStatusReport'
+      'generateStatusReport',
+      // Wait out the function's longer server budget (it calls the AI and can take ~30-60s).
+      { timeout: 300_000 }
     );
 
     const entriesInput = entries.map(e => ({

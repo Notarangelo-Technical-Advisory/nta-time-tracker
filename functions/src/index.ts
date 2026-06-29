@@ -35,7 +35,7 @@ interface AnthropicResponse {
 }
 
 export const generateStatusReport = onCall<GenerateStatusReportRequest>(
-  { cors: true },
+  { cors: true, timeoutSeconds: 300, memory: '512MiB' },
   async (request): Promise<GenerateStatusReportResponse> => {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -106,19 +106,34 @@ Return ONLY valid JSON in this exact format, with no markdown fences or extra te
   ]
 }`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
+    // Abort the upstream call before the function's 300s ceiling so we can
+    // surface a clean deadline error instead of letting the request hang.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 240_000);
+    let response: Response;
+    try {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 4096,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        throw new HttpsError('deadline-exceeded', 'The AI request took too long to respond. Please try again.');
+      }
+      throw new HttpsError('internal', `Failed to reach Anthropic API: ${err?.message ?? err}`);
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
