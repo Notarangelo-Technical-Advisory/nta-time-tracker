@@ -149,19 +149,19 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Write functions/.env for deploy
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHTROPIC_API_KEY }}
+        run: |
+          # 2nd-gen functions load functions/.env natively at deploy time, so the
+          # key is baked into the deployed revision and survives future deploys.
+          printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > functions/.env
+
       - name: Deploy to Firebase
         env:
           NODE_TLS_REJECT_UNAUTHORIZED: '0'
           FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: firebase deploy --only hosting,firestore,functions --force --project "$FIREBASE_PROJECT"
-
-      - name: Set ANTHROPIC_API_KEY on generateStatusReport Cloud Run service
-        run: |
-          gcloud run services update generatestatusreport \
-            --update-env-vars ANTHROPIC_API_KEY=${{ secrets.ANTHTROPIC_API_KEY }} \
-            --region us-central1 \
-            --project "$FIREBASE_PROJECT" \
-            --quiet || echo "::warning::Could not update Cloud Run env var — set ANTHROPIC_API_KEY manually on the generatestatusreport service"
 
       - run: echo "### Deployed to https://fta-invoice-tracking.web.app" >> "$GITHUB_STEP_SUMMARY"
 
