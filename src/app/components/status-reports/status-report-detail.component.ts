@@ -426,6 +426,7 @@ export class StatusReportDetailComponent implements OnInit {
     this.editKey = null;
     this.editValue = '';
     await this.statusReportService.updateSections(this.report.id, this.report.sections);
+    if (type === 'outcome') await this.persistOutcomes(section);
   }
 
   async deleteItem(sectionIdx: number, type: string, itemIdx: number): Promise<void> {
@@ -436,6 +437,17 @@ export class StatusReportDetailComponent implements OnInit {
     this.editKey = null;
     this.editValue = '';
     await this.statusReportService.updateSections(this.report.id, this.report.sections);
+    if (type === 'outcome') await this.persistOutcomes(section);
+  }
+
+  /**
+   * Sync a section's outcomes back to the cumulative `outcomes` collection so the
+   * edit is permanent — every future generated report reads outcomes from there.
+   * Activities are intentionally per-period and are not persisted this way.
+   */
+  private async persistOutcomes(section: StatusReportSection): Promise<void> {
+    if (!this.report) return;
+    await this.statusReportService.upsertOutcomes(this.report.customerId, [section]);
   }
 
   async addItem(sectionIdx: number, type: string): Promise<void> {
