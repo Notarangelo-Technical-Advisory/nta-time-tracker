@@ -101,3 +101,18 @@ gcloud auth application-default set-quota-project fta-invoice-tracking
 - Angular app deployed to Firebase Hosting via GitHub Actions.
 - CI/CD pipeline: `.github/workflows/deploy-and-release.yml` triggers on push to main.
 - The pipeline auto-versions (semver), builds, deploys to Firebase (hosting + firestore), generates AI release notes, and creates a GitHub Release.
+
+## Domain Invariants
+
+### Status Reports — zero-activity sections are orphans
+
+Report sections (`StatusReportSection`) are keyed by `projectName`. Activities always come from the reporting period's time entries grouped by project, while outcomes persist across reports via the per-customer+project `OutcomeRecord` collection (the cumulative "living" record fed to the model as prior outcomes).
+
+**Invariant: a section with no activities is an orphan, not real content.** It appears when a prior `OutcomeRecord` has no matching time entries this period — most often after a project rename leaves a stale record under the old name. The model then emits that record as an activity-less section that duplicates outcomes already carried into the active section, and `upsertOutcomes` re-persists it, so it recurs every report.
+
+Zero-activity sections are therefore filtered out in three places — **do not "restore" them**:
+
+- `functions/src/index.ts` — `generateStatusReport` drops them before returning (stops new reports saving/re-persisting the orphan)
+- `src/app/components/status-reports/status-report-detail.component.ts` — page render (`*ngIf` inside `*ngFor`, preserving the true section index for inline edits) **and** both the PDF and DOCX export loops
+
+If outcomes for a renamed project must survive, merge the stale `OutcomeRecord` into the active project's record and delete the old one — never reintroduce an activity-less section.
