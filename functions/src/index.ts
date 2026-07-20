@@ -184,6 +184,15 @@ For each project listed above, generate:
       throw new HttpsError('internal', 'AI response missing sections array');
     }
 
+    // Drop any section with no activities. These arise when a prior-outcome
+    // record has no matching time entries this period (e.g. after a project
+    // rename) — the model emits it as an activity-less section that redundantly
+    // duplicates outcomes already carried into the active section. Filtering
+    // here also stops upsertOutcomes from re-persisting the orphan.
+    parsed.sections = parsed.sections.filter(
+      (s) => Array.isArray(s.activities) && s.activities.length > 0
+    );
+
     return parsed;
   }
 );

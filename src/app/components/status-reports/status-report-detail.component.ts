@@ -58,9 +58,14 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
           </div>
         </div>
 
-        <!-- AI-generated sections -->
+        <!-- AI-generated sections. Skip any section with no activities: those
+             are orphaned carried-forward outcome records (e.g. from a project
+             rename) that redundantly duplicate an active section's outcomes.
+             ngIf inside ngFor so si stays the true index into report.sections
+             (the inline-edit handlers index into that array). -->
         <div class="sections-list">
-          <div class="report-section" *ngFor="let section of report.sections; let si = index">
+          <ng-container *ngFor="let section of report.sections; let si = index">
+          <div class="report-section" *ngIf="section.activities.length > 0">
             <h2 class="project-name">{{ section.projectName }}</h2>
 
             <div class="section-block">
@@ -101,6 +106,7 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
               <button class="btn-add-item" (click)="addItem(si, 'outcome')">+ Add outcome</button>
             </div>
           </div>
+          </ng-container>
         </div>
 
         <!-- Actions toolbar -->
@@ -552,7 +558,8 @@ export class StatusReportDetailComponent implements OnInit {
 
     let yPos = this.avgHoursPerWeek !== null ? 55 : 48;
 
-    for (const section of report.sections) {
+    // Skip orphaned outcome-only sections (no activities this period).
+    for (const section of report.sections.filter((s) => s.activities.length > 0)) {
       if (yPos > 240) { doc.addPage(); yPos = 14; }
 
       (doc as any).autoTable({
@@ -672,7 +679,8 @@ export class StatusReportDetailComponent implements OnInit {
       children.push(new Paragraph({ text: '', spacing: { after: 320 } }));
     }
 
-    for (const section of report.sections) {
+    // Skip orphaned outcome-only sections (no activities this period).
+    for (const section of report.sections.filter((s) => s.activities.length > 0)) {
       children.push(new Paragraph({
         children: [new TextRun({ text: section.projectName, bold: true, color: '1E3A8A', size: 24 })],
         heading: HeadingLevel.HEADING_1,
