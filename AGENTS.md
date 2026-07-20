@@ -2,34 +2,16 @@
 
 ## Git Workflow
 
-Always follow this feature-branch workflow:
+Commit and push **directly to `main`** — no feature branches or PRs for routine work.
 
-1. **Before making changes**, create and switch to a feature branch:
+1. Use conventional commit messages. Husky/commitlint enforces the type: one of `feat`, `fix`, `perf`, `docs`, `refactor`, `chore`, `style`, `test`. **`ci:` is not allowed — use `chore:` for CI/workflow changes.**
 
-   ```bash
-   git checkout -b <branch-name>
-   ```
+2. The CI/CD pipeline derives the semver bump from the commit-type prefix:
+   - `feat:` → minor
+   - `fix:` / `perf:` / others → patch
+   - `BREAKING CHANGE` or `[major]` → major
 
-   Use conventional-commit-style branch names: `feat/add-timer`, `fix/invoice-total`, `refactor/auth-service`.
-
-2. **Make commits on the feature branch** using conventional commit messages (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`). The CI/CD pipeline uses these prefixes to determine version bumps:
-   - `feat:` triggers a minor version bump
-   - `fix:` triggers a patch version bump
-   - `BREAKING CHANGE` or `[major]` triggers a major version bump
-
-3. **When the work is complete and ready to ship**, run:
-
-   ```bash
-   git ship
-   ```
-
-   `git ship` squash-merges the feature branch into main and pushes to `origin/main` **first**, then attempts to create a GitHub PR for record-keeping, then deletes the branch. **The deploy to Firebase triggers on the push to main** — if the PR creation step fails (e.g., a `gh` token permissions error), the deploy has already been initiated. In that case, simply delete the remote branch manually:
-
-   ```bash
-   git push origin --delete <branch-name>
-   ```
-
-4. **Never commit directly to main.** All changes go through feature branches and PRs. Merging to main triggers the deploy-and-release CI/CD pipeline.
+3. **The push to `main` triggers the deploy** via `.github/workflows/deploy-and-release.yml` (version → build → deploy → release notes → GitHub Release). There are **no path filters**, so every push to main — including docs-only commits — runs the full pipeline and deploys.
 
 ## Firebase Deployment
 
@@ -37,13 +19,13 @@ Always follow this feature-branch workflow:
 
 The app automatically deploys to Firebase when code is pushed to the `main` branch via the GitHub Actions workflow (`.github/workflows/deploy-and-release.yml`).
 
-**What gets deployed:**
+**What gets deployed** (`firebase deploy --only hosting,firestore,functions`):
 
 - **Hosting**: Angular app build to `https://fta-invoice-tracking.web.app`
-- **Firestore Rules**: Security rules from `firestore.rules`
-- **Firestore Indexes**: Database indexes from `firestore.indexes.json`
+- **Firestore Rules & Indexes**: from `firestore.rules` and `firestore.indexes.json`
+- **Cloud Functions**: from `functions/` (e.g. `generateStatusReport`)
 
-**Authentication**: Uses the `FIREBASE_SERVICE_ACCOUNT` GitHub secret (service account JSON).
+**Authentication**: Workload Identity Federation via `google-github-actions/auth@v2` — `workload_identity_provider` from the `WIF_PROVIDER` secret, impersonating service account `firebase-adminsdk-fbsvc@fta-invoice-tracking.iam.gserviceaccount.com`. There is **no** stored service-account JSON secret. CI pins `firebase-tools@15.6.0`.
 
 ### Manual Deployment (When Needed)
 
