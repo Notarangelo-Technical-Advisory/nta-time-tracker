@@ -34,6 +34,29 @@ interface AnthropicResponse {
   content: Array<{ type: string; text: string }>;
 }
 
+// JSON Schema for structured outputs — guarantees the model returns valid JSON
+// in exactly this shape. All objects must set additionalProperties: false.
+const STATUS_REPORT_SCHEMA = {
+  type: 'object',
+  properties: {
+    sections: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          projectName: { type: 'string' },
+          activities: { type: 'array', items: { type: 'string' } },
+          outcomes: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['projectName', 'activities', 'outcomes'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['sections'],
+  additionalProperties: false,
+};
+
 export const generateStatusReport = onCall<GenerateStatusReportRequest>(
   { cors: true, timeoutSeconds: 300, memory: '512MiB' },
   async (request): Promise<GenerateStatusReportResponse> => {
@@ -93,18 +116,7 @@ Client: ${customerName}
 Time entries for this reporting period:${entriesText}${priorOutcomesText}
 For each project listed above, generate:
 1. 3-5 activity bullets describing what was done (past tense, professional, start each with a past-tense verb)
-2. Outcome bullets — prefix each with "Actual:" for outcomes already achieved, or "Potential:" for future outcomes enabled by this work${priorOutcomes && priorOutcomes.length > 0 ? ' (incorporate prior outcomes as instructed above)' : ' (2-3 bullets)'}
-
-Return ONLY valid JSON in this exact format, with no markdown fences or extra text:
-{
-  "sections": [
-    {
-      "projectName": "Project Name",
-      "activities": ["Reviewed and updated...", "Coordinated with..."],
-      "outcomes": ["Actual: Reduced...", "Potential: Enables..."]
-    }
-  ]
-}`;
+2. Outcome bullets — prefix each with "Actual:" for outcomes already achieved, or "Potential:" for future outcomes enabled by this work${priorOutcomes && priorOutcomes.length > 0 ? ' (incorporate prior outcomes as instructed above)' : ' (2-3 bullets)'}`;
 
     // Abort the upstream call before the function's 300s ceiling so we can
     // surface a clean deadline error instead of letting the request hang.
@@ -121,7 +133,22 @@ Return ONLY valid JSON in this exact format, with no markdown fences or extra te
         },
         body: JSON.stringify({
           model: 'claude-sonnet-5',
-          max_tokens: 4096,
+          // Raised from 4096 so adaptive-thinking tokens don't crowd out the
+          // JSON output and truncate it.
+          max_tokens: 8192,
+          // Adaptive thinking improves the Actual/Potential outcome judgment
+          // and the quality of the summary prose. Medium effort balances that
+          // against latency and token cost for this client-facing report.
+          thinking: { type: 'adaptive' },
+          output_config: {
+            effort: 'medium',
+            // Structured outputs guarantee valid JSON matching the schema —
+            // no markdown-fence stripping or regex extraction needed.
+            format: {
+              type: 'json_schema',
+              schema: STATUS_REPORT_SCHEMA,
+            },
+          },
           messages: [{ role: 'user', content: prompt }],
         }),
         signal: controller.signal,
@@ -141,14 +168,14 @@ Return ONLY valid JSON in this exact format, with no markdown fences or extra te
     }
 
     const data = (await response.json()) as AnthropicResponse;
-    const text = data.content[0]?.text || '';
+    // Find the text block by type — don't assume it's content[0]. A thinking
+    // block (or other non-text block) can precede it.
+    const text = data.content.find((b) => b.type === 'text')?.text || '';
 
     let parsed: GenerateStatusReportResponse;
     try {
-      // Strip any markdown code fences Claude may have added
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No JSON object found in response');
-      parsed = JSON.parse(jsonMatch[0]);
+      // Structured outputs guarantee `text` is valid JSON matching the schema.
+      parsed = JSON.parse(text);
     } catch (err) {
       throw new HttpsError('internal', `Failed to parse AI response: ${text.slice(0, 500)}`);
     }
