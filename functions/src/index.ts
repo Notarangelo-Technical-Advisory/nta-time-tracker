@@ -193,6 +193,20 @@ For each project listed above, generate:
       (s) => Array.isArray(s.activities) && s.activities.length > 0
     );
 
+    // Group each section's outcomes so all "Actual:" bullets come before the
+    // "Potential:" ones. The model carries prior outcomes forward (already
+    // actuals-then-potentials) and appends newly-achieved actuals at the end,
+    // which strands the new actuals below the potentials. A stable partition
+    // regroups them while preserving each bullet's relative order in its group.
+    const isActual = (o: string) => /^\s*Actual\b/i.test(o);
+    for (const section of parsed.sections) {
+      if (!Array.isArray(section.outcomes)) continue;
+      section.outcomes = [
+        ...section.outcomes.filter(isActual),
+        ...section.outcomes.filter((o) => !isActual(o)),
+      ];
+    }
+
     return parsed;
   }
 );
