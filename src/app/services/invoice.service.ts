@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, query, orderBy, where, getDocs } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, query, orderBy, where, getDoc, getDocs } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { INVOICES } from './firestore-collections.const';
 import { Invoice, InvoiceLineItem } from '../models/invoice.model';
@@ -91,19 +91,23 @@ export class InvoiceService {
 
   async updateInvoiceStatus(id: string, status: Invoice['status']): Promise<void> {
     const ref = doc(this.firestore, INVOICES, id);
+    const snapshot = await getDoc(ref);
+    const entryIds = (snapshot.data()?.['timeEntryIds'] as string[] | undefined) ?? [];
+
     await updateDoc(ref, {
       status,
       updatedAt: new Date()
     });
 
     // If paid, also mark time entries as paid
-    if (status === 'paid') {
-      const invoice = await new Promise<Invoice>((resolve) => {
-        docData(ref, { idField: 'id' }).subscribe(data => resolve(data as Invoice));
-      });
-      if (invoice.timeEntryIds?.length) {
-        await this.timeEntryService.markAsPaid(invoice.timeEntryIds);
-      }
+    if (status === 'paid' && entryIds.length) {
+      await this.timeEntryService.markAsPaid(entryIds);
+    }
+
+    // A cancelled invoice bills nothing, so its entries go back to unbilled —
+    // otherwise they stay Locked and can never be put on another invoice.
+    if (status === 'cancelled' && entryIds.length) {
+      await this.timeEntryService.releaseFromInvoice(entryIds);
     }
   }
 

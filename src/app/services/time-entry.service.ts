@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, query, orderBy, where, writeBatch } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, deleteField, query, orderBy, where, writeBatch } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { TIME_ENTRIES } from './firestore-collections.const';
 import { TimeEntry } from '../models/time-entry.model';
@@ -72,6 +72,18 @@ export class TimeEntryService {
     for (const id of entryIds) {
       const ref = doc(this.firestore, TIME_ENTRIES, id);
       batch.update(ref, { status: 'paid', updatedAt: now });
+    }
+    await batch.commit();
+  }
+
+  // Undoes markAsBilled: returns entries to the unbilled pool and drops the
+  // invoice link, so they can be selected for a new invoice.
+  async releaseFromInvoice(entryIds: string[]): Promise<void> {
+    const batch = writeBatch(this.firestore);
+    const now = new Date();
+    for (const id of entryIds) {
+      const ref = doc(this.firestore, TIME_ENTRIES, id);
+      batch.update(ref, { status: 'unbilled', invoiceId: deleteField(), updatedAt: now });
     }
     await batch.commit();
   }
