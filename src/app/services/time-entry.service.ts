@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, deleteField, query, orderBy, where, writeBatch } from '@angular/fire/firestore';
+import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, deleteField, query, orderBy, where, getDoc, writeBatch } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { TIME_ENTRIES } from './firestore-collections.const';
 import { TimeEntry } from '../models/time-entry.model';
@@ -78,6 +78,18 @@ export class TimeEntryService {
 
   // Undoes markAsBilled: returns entries to the unbilled pool and drops the
   // invoice link, so they can be selected for a new invoice.
+  // Reads entries by id, preserving order. A null slot means the entry no
+  // longer exists — callers that reconcile against an invoice need to tell
+  // "deleted" apart from "still there but changed".
+  async getEntriesByIds(entryIds: string[]): Promise<(TimeEntry | null)[]> {
+    const snapshots = await Promise.all(
+      entryIds.map(id => getDoc(doc(this.firestore, TIME_ENTRIES, id)))
+    );
+    return snapshots.map(snap =>
+      snap.exists() ? ({ id: snap.id, ...snap.data() } as TimeEntry) : null
+    );
+  }
+
   async releaseFromInvoice(entryIds: string[]): Promise<void> {
     const batch = writeBatch(this.firestore);
     const now = new Date();

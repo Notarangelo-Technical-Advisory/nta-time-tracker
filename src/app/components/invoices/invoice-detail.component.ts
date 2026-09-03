@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { InvoiceService } from '../../services/invoice.service';
+import { InvoiceService, ReopenBlocker } from '../../services/invoice.service';
 import { Invoice, InvoiceLineItem } from '../../models/invoice.model';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -128,9 +128,71 @@ import autoTable from 'jspdf-autotable';
           <button class="btn-action-status btn-success" *ngIf="invoice.status === 'sent' || invoice.status === 'overdue'" (click)="updateStatus('paid')">
             Mark as Paid
           </button>
-          <button class="btn-action-status btn-danger-outline" (click)="updateStatus('cancelled')">
+          <button class="btn-action-status btn-danger-outline" (click)="showCancelConfirm = true">
             Cancel Invoice
           </button>
+        </div>
+
+        <div class="invoice-actions" *ngIf="invoice.status === 'cancelled'">
+          <button class="btn-action-status" (click)="reopen()" [disabled]="reopening">
+            {{ reopening ? 'Reopening...' : 'Reopen Invoice' }}
+          </button>
+          <span class="action-hint">Returns this invoice to draft and re-bills its time entries.</span>
+        </div>
+      </div>
+
+      <!-- Cancel confirmation -->
+      <div class="modal-overlay" *ngIf="showCancelConfirm && invoice" (click)="showCancelConfirm = false">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>Cancel Invoice</h3>
+          <p>
+            This voids <strong>{{ invoice.invoiceNumber }}</strong> and returns its
+            {{ invoice.timeEntryIds.length }}
+            {{ invoice.timeEntryIds.length === 1 ? 'time entry' : 'time entries' }}
+            ({{ totalHours }} hrs) to the unbilled pool, where they can be put on a new invoice.
+          </p>
+          <div class="modal-actions">
+            <button class="btn-secondary" (click)="showCancelConfirm = false">Keep Invoice</button>
+            <button class="btn-danger" (click)="cancelInvoice()" [disabled]="cancelling">
+              {{ cancelling ? 'Cancelling...' : 'Cancel Invoice' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reopen refused: entries are no longer free to re-bill -->
+      <div class="modal-overlay" *ngIf="reopenBlockers" (click)="reopenBlockers = null">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>Can't Reopen This Invoice</h3>
+          <p>
+            {{ reopenBlockers.length }} of its
+            {{ reopenBlockers.length === 1 ? 'time entry is' : 'time entries are' }}
+            no longer free to bill. Reopening would charge the same hours twice.
+          </p>
+          <ul class="blocker-list">
+            <li *ngFor="let blocker of reopenBlockers">
+              <ng-container *ngIf="blocker.date; else unknownEntry">
+                {{ formatDate(blocker.date) }} ({{ blocker.hours }} hrs)
+              </ng-container>
+              <ng-template #unknownEntry>This invoice's entry</ng-template>
+              <ng-container [ngSwitch]="blocker.reason">
+                <span *ngSwitchCase="'missing'">was deleted.</span>
+                <span *ngSwitchCase="'claimed'">
+                  <ng-container *ngIf="blocker.claimedBy; else notUnbilled">
+                    is already on {{ blocker.claimedBy }}.
+                  </ng-container>
+                  <ng-template #notUnbilled>is no longer unbilled.</ng-template>
+                </span>
+              </ng-container>
+            </li>
+          </ul>
+          <p class="modal-footnote">
+            To rebill this work, remove those entries from the other invoice first, or
+            generate a new invoice for whatever is still unbilled.
+          </p>
+          <div class="modal-actions">
+            <button class="btn-secondary" (click)="reopenBlockers = null">Close</button>
+          </div>
         </div>
       </div>
     </div>
@@ -341,8 +403,38 @@ import autoTable from 'jspdf-autotable';
       display: flex;
       gap: $spacing-sm;
       justify-content: flex-end;
+      align-items: center;
       padding-top: $spacing-xl;
       border-top: $border-width-thin solid $color-border-light;
+    }
+
+    .action-hint {
+      color: $color-text-muted;
+      font-size: $font-size-sm;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: $spacing-sm;
+      justify-content: flex-end;
+    }
+
+    .modal-content p {
+      margin: $spacing-base 0 $spacing-lg 0;
+      color: $color-text-secondary;
+    }
+
+    .modal-footnote {
+      font-size: $font-size-sm;
+    }
+
+    .blocker-list {
+      margin: 0 0 $spacing-lg 0;
+      padding-left: $spacing-lg;
+      color: $color-text-secondary;
+      font-size: $font-size-sm;
+
+      li { margin-bottom: $spacing-xs; }
     }
 
     .btn-action-status {
@@ -392,6 +484,15 @@ export class InvoiceDetailComponent implements OnInit {
 
   invoice: Invoice | null = null;
   loading = true;
+  showCancelConfirm = false;
+  cancelling = false;
+  reopening = false;
+  reopenBlockers: ReopenBlocker[] | null = null;
+
+  get totalHours(): number {
+    if (!this.invoice) return 0;
+    return Math.round(this.invoice.lineItems.reduce((sum, item) => sum + item.hours, 0) * 100) / 100;
+  }
 
   get groupedLineItems(): { projectName: string; items: InvoiceLineItem[] }[] {
     if (!this.invoice) return [];
@@ -448,6 +549,30 @@ export class InvoiceDetailComponent implements OnInit {
   async updateStatus(status: Invoice['status']): Promise<void> {
     if (!this.invoice) return;
     await this.invoiceService.updateInvoiceStatus(this.invoice.id, status);
+  }
+
+  async cancelInvoice(): Promise<void> {
+    if (!this.invoice || this.cancelling) return;
+    this.cancelling = true;
+    try {
+      await this.invoiceService.updateInvoiceStatus(this.invoice.id, 'cancelled');
+      this.showCancelConfirm = false;
+    } finally {
+      this.cancelling = false;
+    }
+  }
+
+  async reopen(): Promise<void> {
+    if (!this.invoice || this.reopening) return;
+    this.reopening = true;
+    try {
+      const result = await this.invoiceService.reopenInvoice(this.invoice.id);
+      if (!result.ok && result.reason === 'entries-unavailable') {
+        this.reopenBlockers = result.blockers;
+      }
+    } finally {
+      this.reopening = false;
+    }
   }
 
   async downloadPDF(): Promise<void> {

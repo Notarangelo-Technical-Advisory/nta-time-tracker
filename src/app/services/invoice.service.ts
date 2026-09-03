@@ -6,6 +6,37 @@ import { Invoice, InvoiceLineItem } from '../models/invoice.model';
 import { TimeEntry } from '../models/time-entry.model';
 import { TimeEntryService } from './time-entry.service';
 
+/** Why a single time entry can't be pulled back onto a reopening invoice. */
+export interface ReopenBlocker {
+  entryId: string;
+  reason: 'missing' | 'claimed';
+  /** Invoice that has since claimed the entry, when we can resolve it. */
+  claimedBy?: string;
+  /** Set when the entry still exists, so the UI can name it by date. */
+  date?: string;
+  hours?: number;
+}
+
+/**
+ * Whether a time entry is free for the given invoice to bill.
+ *
+ * Cancelling an invoice releases its entries, so a reopen has to re-claim
+ * them — but only if nothing else took them in the meantime. An entry still
+ * pointing at this invoice counts as free: invoices cancelled before releases
+ * existed never let go of theirs, and re-billing those is a no-op.
+ */
+export function canRebillEntry(
+  entry: Pick<TimeEntry, 'status' | 'invoiceId'>,
+  invoiceId: string
+): boolean {
+  return entry.invoiceId === invoiceId || (!entry.invoiceId && entry.status === 'unbilled');
+}
+
+export type ReopenResult =
+  | { ok: true }
+  | { ok: false; reason: 'not-cancelled' }
+  | { ok: false; reason: 'entries-unavailable'; blockers: ReopenBlocker[] };
+
 @Injectable({ providedIn: 'root' })
 export class InvoiceService {
   private firestore = inject(Firestore);
@@ -108,6 +139,75 @@ export class InvoiceService {
     // otherwise they stay Locked and can never be put on another invoice.
     if (status === 'cancelled' && entryIds.length) {
       await this.timeEntryService.releaseFromInvoice(entryIds);
+    }
+  }
+
+  /**
+   * Undoes a cancellation, returning the invoice to draft and re-billing its
+   * time entries.
+   *
+   * Cancelling releases entries back to the unbilled pool, so between the
+   * cancel and the reopen they may have been deleted or put on a replacement
+   * invoice. Re-billing those would double-bill the same hours, so the reopen
+   * is refused unless every entry is still free.
+   */
+  async reopenInvoice(id: string): Promise<ReopenResult> {
+    const ref = doc(this.firestore, INVOICES, id);
+    const snapshot = await getDoc(ref);
+    if (snapshot.data()?.['status'] !== 'cancelled') {
+      return { ok: false, reason: 'not-cancelled' };
+    }
+
+    const entryIds = (snapshot.data()?.['timeEntryIds'] as string[] | undefined) ?? [];
+    const entries = await this.timeEntryService.getEntriesByIds(entryIds);
+
+    const blockers: ReopenBlocker[] = [];
+    for (let i = 0; i < entryIds.length; i++) {
+      const entry = entries[i];
+      if (!entry) {
+        blockers.push({ entryId: entryIds[i], reason: 'missing' });
+        continue;
+      }
+      if (!canRebillEntry(entry, id)) {
+        blockers.push({
+          entryId: entryIds[i],
+          reason: 'claimed',
+          claimedBy: entry.invoiceId,
+          date: entry.date,
+          hours: entry.durationHours
+        });
+      }
+    }
+
+    if (blockers.length) {
+      await this.resolveBlockerInvoiceNumbers(blockers);
+      return { ok: false, reason: 'entries-unavailable', blockers };
+    }
+
+    // Re-bill first: a failure here leaves the invoice cancelled, which is the
+    // state the entries already agree with.
+    if (entryIds.length) {
+      await this.timeEntryService.markAsBilled(entryIds, id);
+    }
+    await updateDoc(ref, { status: 'draft', updatedAt: new Date() });
+    return { ok: true };
+  }
+
+  /** Swaps blocker invoice ids for human-readable invoice numbers, in place. */
+  private async resolveBlockerInvoiceNumbers(blockers: ReopenBlocker[]): Promise<void> {
+    const ids = [...new Set(blockers.map(b => b.claimedBy).filter((v): v is string => !!v))];
+    const snapshots = await Promise.all(
+      ids.map(invoiceId => getDoc(doc(this.firestore, INVOICES, invoiceId)))
+    );
+    const numbers = new Map<string, string>();
+    for (const snap of snapshots) {
+      const num = snap.data()?.['invoiceNumber'] as string | undefined;
+      if (num) numbers.set(snap.id, num);
+    }
+    for (const blocker of blockers) {
+      if (blocker.claimedBy) {
+        blocker.claimedBy = numbers.get(blocker.claimedBy) ?? blocker.claimedBy;
+      }
     }
   }
 
