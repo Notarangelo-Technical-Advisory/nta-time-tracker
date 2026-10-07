@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -161,6 +161,7 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
       }
     </div>
     `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

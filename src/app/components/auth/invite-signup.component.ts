@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -76,6 +76,7 @@ import { AUTH, FIRESTORE } from '../../firebase';
       </div>
     </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

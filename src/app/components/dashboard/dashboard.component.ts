@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs';
@@ -156,6 +156,7 @@ import { Invoice } from '../../models/invoice.model';
       }
     </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

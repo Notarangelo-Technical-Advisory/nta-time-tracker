@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -62,6 +62,7 @@ import { AuthService } from '../../services/auth.service';
       </div>
     </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

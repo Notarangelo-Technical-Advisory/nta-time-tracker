@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -242,6 +242,7 @@ interface ChartBar {
       }
     </div>
     `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

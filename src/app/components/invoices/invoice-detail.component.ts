@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { InvoiceService, ReopenBlocker } from '../../services/invoice.service';
@@ -225,6 +225,7 @@ import autoTable from 'jspdf-autotable';
       }
     </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

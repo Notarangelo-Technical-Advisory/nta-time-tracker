@@ -1,6 +1,6 @@
 import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { routes } from './app.routes';
@@ -11,7 +11,7 @@ export const appConfig: ApplicationConfig = {
     // Angular 21+ defaults to zoneless; this app still relies on zone.js.
     provideZoneChangeDetection(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideHttpClient(),
+    provideHttpClient(withXhr()),
     importProvidersFrom(ReactiveFormsModule),
     provideFirebase(),
   ]
