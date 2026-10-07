@@ -183,7 +183,6 @@ jobs:
 
       - name: Deploy to Firebase
         env:
-          NODE_TLS_REJECT_UNAUTHORIZED: '0'
           FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: firebase deploy --only hosting,firestore,functions --force --project "$FIREBASE_PROJECT"
 
