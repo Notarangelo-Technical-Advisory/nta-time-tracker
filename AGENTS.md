@@ -1,121 +1,50 @@
-# Project Rules
+# NTA Time Tracker — Agent Instructions
 
-## Git Workflow
+This app follows the shared engineering standards in [`docs/standards/`](docs/standards/README.md), copied from [`engineering-standards`](https://github.com/Notarangelo-Technical-Advisory/engineering-standards) `v1.0.0`. Do not edit `docs/standards/` in this repo. Change the standards repo instead.
 
-Commit and push **directly to `main`** — no feature branches or PRs for routine work.
+This file holds only the rules that belong to this app.
 
-1. Use conventional commit messages. Husky/commitlint enforces the type: one of `feat`, `fix`, `perf`, `docs`, `refactor`, `chore`, `style`, `test`. **`ci:` is not allowed — use `chore:` for CI/workflow changes.**
+## Git and deployment
 
-2. The CI/CD pipeline derives the semver bump from the commit-type prefix:
-   - `feat:` → minor
-   - `fix:` / `perf:` / others → patch
-   - `BREAKING CHANGE` or `[major]` → major
+- Use a branch and `git ship`, as in [`docs/standards/git-and-commits.md`](docs/standards/git-and-commits.md). The pull request needs no review.
+- Every merge to `main` deploys to production through `.github/workflows/deploy-and-release.yml`. The workflow has no path filters, so a docs-only change also deploys.
+- Never deploy from a laptop. This also applies to a fix to the Firestore rules.
 
-3. **The push to `main` triggers the deploy** via `.github/workflows/deploy-and-release.yml` (version → build → deploy → release notes → GitHub Release). There are **no path filters**, so every push to main — including docs-only commits — runs the full pipeline and deploys.
+## Firebase
 
-## Firebase Deployment
-
-### Automatic Deployment (Preferred)
-
-The app automatically deploys to Firebase when code is pushed to the `main` branch via the GitHub Actions workflow (`.github/workflows/deploy-and-release.yml`).
-
-**What gets deployed** (`firebase deploy --only hosting,firestore,functions`):
-
-- **Hosting**: Angular app build to `https://fta-invoice-tracking.web.app`
-- **Firestore Rules & Indexes**: from `firestore.rules` and `firestore.indexes.json`
-- **Cloud Functions**: from `functions/` (e.g. `generateStatusReport`)
-
-**Authentication**: Workload Identity Federation via `google-github-actions/auth@v2` — `workload_identity_provider` from the `WIF_PROVIDER` secret, impersonating service account `firebase-adminsdk-fbsvc@fta-invoice-tracking.iam.gserviceaccount.com`. There is **no** stored service-account JSON secret. CI pins `firebase-tools@15.6.0`.
-
-### Manual Deployment (When Needed)
-
-Use manual deployment to deploy changes without creating a new release (e.g., Firestore rules hotfix).
-
-**Prerequisites:**
-
-1. Authenticate with Google Cloud:
-
-   ```bash
-   gcloud auth application-default login
-   ```
-
-2. Set the quota project:
-
-   ```bash
-   gcloud auth application-default set-quota-project fta-invoice-tracking
-   ```
-
-**Commands:**
-
-```bash
-# Deploy everything (hosting + firestore rules/indexes)
-npm run deploy
-
-# Deploy only hosting
-npm run deploy:hosting
-
-# Deploy only Firestore rules and indexes
-npm run deploy:firestore
-
-# Deploy via non-interactive script
-node deploy-non-interactive.js
-```
-
-### Troubleshooting
-
-**Problem:** `Failed to authenticate` or `quota project` error
-
-**Solution:**
-
-```bash
-gcloud auth application-default login
-gcloud auth application-default set-quota-project fta-invoice-tracking
-```
-
-**Verify deployment:**
-
-- Open [Firebase Console → Firestore → Rules](https://console.firebase.google.com/project/fta-invoice-tracking/firestore/rules)
-- Check the timestamp to confirm rules were updated
-- For hosting, visit `https://fta-invoice-tracking.web.app` and hard-refresh (Cmd+Shift+R)
-
-## Project Notes
-
-- Angular app deployed to Firebase Hosting via GitHub Actions.
-- CI/CD pipeline: `.github/workflows/deploy-and-release.yml` triggers on push to main.
-- The pipeline auto-versions (semver), builds, deploys to Firebase (hosting + firestore), generates AI release notes, and creates a GitHub Release.
+- **Project:** `fta-invoice-tracking`
+- **App URL:** `https://fta-invoice-tracking.web.app`
+- **Deployed by CI:** `firebase deploy --only hosting,firestore,functions` (hosting, `firestore.rules`, `firestore.indexes.json`, and the Cloud Functions in `functions/`)
+- **CI sign-in:** Workload Identity Federation, as the service account `firebase-adminsdk-fbsvc@fta-invoice-tracking.iam.gserviceaccount.com`
+- **Secret name:** the GitHub secret for the Claude API key is spelled `ANTHTROPIC_API_KEY`, with an extra `T`. The workflow uses the same spelling, so do not correct it in one place only.
+- **Check a deploy:** open `https://fta-invoice-tracking.web.app` and reload with Cmd+Shift+R. For rules, check the timestamp in the [Firebase console](https://console.firebase.google.com/project/fta-invoice-tracking/firestore/rules).
 
 ## Testing
 
-Every code change ships with automated tests. `npm run test:ci` runs the browser tests on the Firebase
-Auth and Firestore emulators (project `demo-nta-browser`), with real accounts and the real
-`firestore.rules`. The deploy workflow runs it first, so a failing test stops the deploy. Helpers for
-signing in as an admin or a customer and for seeding documents are in `src/testing/emulator-testing.ts`.
+- `npm run test:all` runs every suite. Today that is `test:ci`: the browser tests on the Firebase Auth and Firestore emulators (project `demo-nta-browser`), with real accounts and the real `firestore.rules`.
+- Helpers for signing in as an admin or a customer, and for seeding documents, are in `src/testing/emulator-testing.ts`.
 
-## Access Model
+## Access model
 
-`firestore.rules` grants everything from a user's profile (`userProfiles/{uid}`): `role` makes an admin,
-and `customerId` decides which customer's records a customer can read. So:
+`firestore.rules` grants everything from a user's profile (`userProfiles/{uid}`): `role` makes an admin, and `customerId` decides which customer's records a customer can read. So:
 
-- Only an admin can set `role`, `isAdmin` or `customerId`. A user may update other fields on their own
-  profile (for example `lastLogin`).
-- There is no self sign-up. A customer joins through an invite link; admins are made by another admin.
-- An invite's document ID is its token. Anyone with the link can open that one invite; only admins can
-  list invites. The invited person may create a customer profile that matches the invite, and mark that
-  invite accepted.
+- Only an admin can set `role`, `isAdmin` or `customerId`. A user may update other fields on their own profile, for example `lastLogin`.
+- There is no self sign-up. A customer joins through an invite link. Only another admin can make an admin.
+- An invite's document ID is its token. Anyone with the link can open that one invite, and only admins can list invites. The invited person may create a customer profile that matches the invite, and mark that invite accepted.
 
 `src/app/firestore-rules.spec.ts` checks each of these. Keep it passing when you change the rules.
 
-## Domain Invariants
+## Domain rules
 
-### Status Reports — zero-activity sections are orphans
+### Status reports: a section with no activities is an orphan
 
-Report sections (`StatusReportSection`) are keyed by `projectName`. Activities always come from the reporting period's time entries grouped by project, while outcomes persist across reports via the per-customer+project `OutcomeRecord` collection (the cumulative "living" record fed to the model as prior outcomes).
+Report sections (`StatusReportSection`) are keyed by `projectName`. Activities always come from the reporting period's time entries, grouped by project. Outcomes persist across reports in the `OutcomeRecord` collection, one record per customer and project. That collection is the cumulative record of prior outcomes that is sent to the model.
 
-**Invariant: a section with no activities is an orphan, not real content.** It appears when a prior `OutcomeRecord` has no matching time entries this period — most often after a project rename leaves a stale record under the old name. The model then emits that record as an activity-less section that duplicates outcomes already carried into the active section, and `upsertOutcomes` re-persists it, so it recurs every report.
+**Rule: a section with no activities is an orphan, not real content.** It appears when a prior `OutcomeRecord` has no matching time entries this period. This happens most often after a project rename leaves an old record under the old name. The model then returns that record as a section with no activities, which repeats outcomes already carried into the active section. `upsertOutcomes` then saves it again, so it comes back in every report.
 
-Zero-activity sections are therefore filtered out in three places — **do not "restore" them**:
+Sections with no activities are therefore removed in three places. **Do not "restore" them:**
 
-- `functions/src/index.ts` — `generateStatusReport` drops them before returning (stops new reports saving/re-persisting the orphan)
-- `src/app/components/status-reports/status-report-detail.component.ts` — page render (`@if` inside `@for`, preserving the true section index for inline edits) **and** both the PDF and DOCX export loops
+- `functions/src/index.ts`: `generateStatusReport` drops them before it returns, so new reports do not save the orphan again.
+- `src/app/components/status-reports/status-report-detail.component.ts`: the page render (an `@if` inside the `@for`, which keeps the true section index for inline edits), **and** both the PDF and DOCX export loops.
 
-If outcomes for a renamed project must survive, merge the stale `OutcomeRecord` into the active project's record and delete the old one — never reintroduce an activity-less section.
+If the outcomes of a renamed project must be kept, merge the old `OutcomeRecord` into the active project's record and delete the old one. Never bring back a section with no activities.
