@@ -41,6 +41,7 @@ describe('InviteService', () => {
 
     expect(invite).toEqual(jasmine.objectContaining({ email: 'brad@ihrdc.com', status: 'pending', createdBy: adminUid, customerName: 'IHRDC' }));
     expect(invite.token).toMatch(/^[0-9a-f-]{36}$/);
+    expect(invite.id).toBe(invite.token);
     const days = (invite.expiresAt.getTime() - invite.createdAt.getTime()) / 86_400_000;
     expect(days).toBe(7);
     await waitFor(() => invites.latest()?.length === 1);
@@ -54,14 +55,14 @@ describe('InviteService', () => {
   });
 
   it('allows a new invite once the old one has expired, and marks the old one expired', async () => {
-    await seedDocument('invites/old', {
+    await seedDocument('invites/old-token', {
       email: 'brad@ihrdc.com', customerId: 'cust-1', customerName: 'IHRDC', token: 'old-token', status: 'pending',
       createdBy: adminUid, createdAt: new Date(Date.now() - 9 * 86_400_000), expiresAt: new Date(Date.now() - 2 * 86_400_000),
     });
 
     await service.createInvite('brad@ihrdc.com', 'cust-1', 'IHRDC');
 
-    expect((await readDocument('invites/old'))!['status']).toBe('expired');
+    expect((await readDocument('invites/old-token'))!['status']).toBe('expired');
     expect((await listDocuments('invites')).length).toBe(2);
   });
 
@@ -83,14 +84,19 @@ describe('InviteService', () => {
     expect((await readDocument(`invites/${accepted.id}`))!['acceptedAt']).toEqual(jasmine.any(Date));
   });
 
-  it('opens nothing for an expired token, and marks it expired', async () => {
-    await seedDocument('invites/old', {
+  it('opens nothing for an expired token, and shows it to the admin as expired', async () => {
+    await seedDocument('invites/old-token', {
       email: 'brad@ihrdc.com', customerId: 'cust-1', customerName: 'IHRDC', token: 'old-token', status: 'pending',
       createdBy: adminUid, createdAt: new Date(Date.now() - 9 * 86_400_000), expiresAt: new Date(Date.now() - 2 * 86_400_000),
     });
 
-    expect(await service.getInviteByToken('old-token')).toBeNull();
-    expect((await readDocument('invites/old'))!['status']).toBe('expired');
+    expect(await asVisitor((visitor) => visitor.getInviteByToken('old-token'))).toBeNull();
+    expect((await readDocument('invites/old-token'))!['status']).toBe('pending');
+
+    const invites = watch(service.getInvites());
+    await waitFor(() => invites.latest()?.length === 1);
+    expect(invites.latest()![0].status).toBe('expired');
+    invites.stop();
   });
 
   it('builds the link from the site address', () => {

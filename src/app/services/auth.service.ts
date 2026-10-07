@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, User } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail, User } from 'firebase/auth';
 import { authState } from 'rxfire/auth';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -26,27 +26,6 @@ export class AuthService {
     });
 
     if (profile?.role === 'admin') {
-      this.router.navigate(['/dashboard']);
-    } else {
-      this.router.navigate(['/portal']);
-    }
-  }
-
-  async signUp(email: string, password: string, role: 'admin' | 'customer' = 'admin'): Promise<void> {
-    const credential = await createUserWithEmailAndPassword(this.auth, email, password);
-
-    const profile: UserProfile = {
-      uid: credential.user.uid,
-      email: email,
-      role: role,
-      isAdmin: role === 'admin',
-      createdAt: new Date(),
-      lastLogin: new Date()
-    };
-
-    await setDoc(doc(this.firestore, USER_PROFILES, credential.user.uid), profile);
-
-    if (role === 'admin') {
       this.router.navigate(['/dashboard']);
     } else {
       this.router.navigate(['/portal']);

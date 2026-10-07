@@ -15,7 +15,7 @@ describe('InviteSignupComponent', () => {
   beforeEach(async () => {
     await clearEmulators();
     emulator = createEmulatorApp();
-    await seedDocument('invites/inv-1', {
+    await seedDocument('invites/good-token', {
       email: 'brad@ihrdc.com', customerId: 'cust-1', customerName: 'IHRDC', token: 'good-token', status: 'pending',
       createdBy: 'admin', createdAt: new Date(), expiresAt: new Date(Date.now() + 86_400_000),
     });
@@ -75,18 +75,15 @@ describe('InviteSignupComponent', () => {
 
     const uid = emulator.auth.currentUser!.uid;
     expect(await readDocument(`userProfiles/${uid}`)).toEqual(jasmine.objectContaining({
-      email: 'brad@ihrdc.com', role: 'customer', isAdmin: false, customerId: 'cust-1',
+      email: 'brad@ihrdc.com', role: 'customer', isAdmin: false, customerId: 'cust-1', inviteId: 'good-token',
     }));
   });
 
-  // Fails today: firestore.rules lets only an admin update an invite, so the
-  // new customer cannot mark theirs accepted. They see PERMISSION_DENIED, the
-  // invite stays pending, and the portal never opens.
-  xit('accepts the invite and opens the portal', async () => {
+  it('accepts the invite and opens the portal', async () => {
     const page = await signUp();
 
     expect(page.error).toBe('');
-    expect((await readDocument('invites/inv-1'))!['status']).toBe('accepted');
+    expect((await readDocument('invites/good-token'))!['status']).toBe('accepted');
     expect(navigate).toHaveBeenCalledWith(['/portal']);
   });
 });

@@ -248,6 +248,7 @@ export class InviteSignupComponent implements OnInit {
         role: 'customer',
         isAdmin: false,
         customerId: this.invite.customerId,
+        inviteId: this.invite.id,
         createdAt: new Date(),
         lastLogin: new Date()
       };

@@ -91,6 +91,20 @@ Auth and Firestore emulators (project `demo-nta-browser`), with real accounts an
 `firestore.rules`. The deploy workflow runs it first, so a failing test stops the deploy. Helpers for
 signing in as an admin or a customer and for seeding documents are in `src/testing/emulator-testing.ts`.
 
+## Access Model
+
+`firestore.rules` grants everything from a user's profile (`userProfiles/{uid}`): `role` makes an admin,
+and `customerId` decides which customer's records a customer can read. So:
+
+- Only an admin can set `role`, `isAdmin` or `customerId`. A user may update other fields on their own
+  profile (for example `lastLogin`).
+- There is no self sign-up. A customer joins through an invite link; admins are made by another admin.
+- An invite's document ID is its token. Anyone with the link can open that one invite; only admins can
+  list invites. The invited person may create a customer profile that matches the invite, and mark that
+  invite accepted.
+
+`src/app/firestore-rules.spec.ts` checks each of these. Keep it passing when you change the rules.
+
 ## Domain Invariants
 
 ### Status Reports — zero-activity sections are orphans

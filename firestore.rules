@@ -19,12 +19,36 @@ service cloud.firestore {
         get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.customerId == customerId;
     }
 
-    // User profiles - admin can list all, users can read own
+    // User profiles. Every permission in these rules comes from a profile's
+    // role and customerId, so only an admin may set them. A new customer may
+    // create their own profile only as the invite they hold describes it.
+    function profileAccessFields() {
+      return ['role', 'isAdmin', 'customerId', 'inviteId', 'uid', 'email'];
+    }
+
+    // The pending invite, addressed by its token, that lets the signed-in
+    // user create their customer profile.
+    function invitedProfile(userId) {
+      let invite = get(/databases/$(database)/documents/invites/$(request.resource.data.inviteId));
+      return request.resource.data.keys().hasAll(['inviteId', 'role', 'isAdmin', 'customerId', 'uid', 'email'])
+        && exists(/databases/$(database)/documents/invites/$(request.resource.data.inviteId))
+        && invite.data.status == 'pending'
+        && invite.data.expiresAt > request.time
+        && invite.data.email == request.auth.token.email
+        && request.resource.data.email == invite.data.email
+        && request.resource.data.customerId == invite.data.customerId
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'customer'
+        && request.resource.data.isAdmin == false;
+    }
+
     match /userProfiles/{userId} {
       allow list: if isAdmin();
       allow get: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuthenticated() && request.auth.uid == userId && invitedProfile(userId);
+      allow update: if isAdmin()
+        || (isAuthenticated() && request.auth.uid == userId
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(profileAccessFields()));
       allow delete: if isAdmin();
     }
 
@@ -74,11 +98,21 @@ service cloud.firestore {
       allow read, create, update, delete: if isAdmin();
     }
 
-    // Invites - admin CRUD, unauthenticated read for token validation
-    // UUID token (128-bit) acts as the secret, making unguessable
-    match /invites/{inviteId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
+    // Invites. Each invite's document ID is its token, which is the secret in
+    // the invite link: anyone holding the link can open that one invite, but
+    // only an admin can list them. The invited person, signed in with the
+    // invited email, may mark their own pending invite accepted.
+    match /invites/{token} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.token == token;
+      allow update: if isAdmin()
+        || (isAuthenticated()
+            && resource.data.status == 'pending'
+            && resource.data.email == request.auth.token.email
+            && request.resource.data.status == 'accepted'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt']));
+      allow delete: if isAdmin();
     }
 
     // Deny all other access

@@ -13,11 +13,6 @@ import { AuthService } from '../../services/auth.service';
         <h1>Notarangelo Technical Advisory</h1>
         <p class="subtitle">Time & Invoicing</p>
     
-        <div class="tab-bar">
-          <button [class.active]="mode === 'login'" (click)="mode = 'login'">Sign In</button>
-          <button [class.active]="mode === 'signup'" (click)="mode = 'signup'">Sign Up</button>
-        </div>
-    
         <form (ngSubmit)="onSubmit()" class="auth-form">
           <div class="form-group">
             <label class="form-label" for="email">Email</label>
@@ -47,7 +42,7 @@ import { AuthService } from '../../services/auth.service';
             @if (loading) {
               <span class="spinner-border-sm"></span>
             }
-            {{ mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Reset Password' }}
+            {{ mode === 'login' ? 'Sign In' : 'Reset Password' }}
           </button>
         </form>
     
@@ -108,29 +103,6 @@ import { AuthService } from '../../services/auth.service';
       }
     }
 
-    .tab-bar {
-      display: flex;
-      gap: $spacing-sm;
-      margin-bottom: $spacing-xl;
-
-      button {
-        flex: 1;
-        padding: $spacing-md;
-        border: none;
-        background: $color-gray-100;
-        color: $color-text-muted;
-        font-weight: $font-weight-semibold;
-        cursor: pointer;
-        border-radius: $border-radius-base;
-        transition: $transition-all;
-
-        &.active {
-          background: $color-primary;
-          color: $color-white;
-        }
-      }
-    }
-
     .auth-form {
       .form-group { @include form-group; }
       .form-label { @include form-label; }
@@ -163,7 +135,9 @@ import { AuthService } from '../../services/auth.service';
 export class AuthComponent {
   private authService = inject(AuthService);
 
-  mode: 'login' | 'signup' | 'reset' = 'login';
+  // There is no self sign-up: customers join through an invite link, and
+  // admins are made by another admin on the Users page.
+  mode: 'login' | 'reset' = 'login';
   email = '';
   password = '';
   error = '';
@@ -178,8 +152,6 @@ export class AuthComponent {
     try {
       if (this.mode === 'login') {
         await this.authService.signIn(this.email, this.password);
-      } else if (this.mode === 'signup') {
-        await this.authService.signUp(this.email, this.password);
       } else {
         await this.authService.resetPassword(this.email);
         this.successMessage = 'Password reset email sent. Check your inbox.';

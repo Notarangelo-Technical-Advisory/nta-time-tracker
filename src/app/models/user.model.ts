@@ -8,4 +8,6 @@ export interface UserProfile {
   displayName?: string;
   company?: string;
   customerId?: string;
+  /** The invite (its token) a customer signed up with. Checked by firestore.rules. */
+  inviteId?: string;
 }
