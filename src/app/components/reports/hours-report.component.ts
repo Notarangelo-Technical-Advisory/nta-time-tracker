@@ -49,7 +49,7 @@ interface ChartBar {
           Export PDF
         </button>
       </div>
-
+    
       <!-- Filters -->
       <div class="filters">
         <div class="filter-row">
@@ -57,7 +57,9 @@ interface ChartBar {
             <label class="filter-label">Customer</label>
             <select class="form-control" [(ngModel)]="selectedCustomerId" (ngModelChange)="onFilterChange()">
               <option value="">All Customers</option>
-              <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
+              @for (c of customers; track c) {
+                <option [value]="c.id">{{ c.companyName }}</option>
+              }
             </select>
           </div>
           <div class="filter-group">
@@ -79,154 +81,167 @@ interface ChartBar {
           </div>
         </div>
       </div>
-
+    
       <!-- Loading -->
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading entries...</p>
-      </div>
-
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading entries...</p>
+        </div>
+      }
+    
       <!-- Empty -->
-      <div class="empty-state" *ngIf="!loading && !weeks.length">
-        <h3>No data found</h3>
-        <p>No time entries match the selected filters.</p>
-      </div>
-
+      @if (!loading && !weeks.length) {
+        <div class="empty-state">
+          <h3>No data found</h3>
+          <p>No time entries match the selected filters.</p>
+        </div>
+      }
+    
       <!-- Chart -->
-      <div class="chart-card" *ngIf="!loading && weeks.length" id="chart-export-area">
-        <div class="chart-header">
-          <div class="chart-title-row">
-            <h2 class="chart-title">Weekly Hours</h2>
-            <span class="chart-subtitle" *ngIf="selectedCustomerName">{{ selectedCustomerName }}</span>
-            <span class="chart-subtitle" *ngIf="!selectedCustomerId">All Customers</span>
+      @if (!loading && weeks.length) {
+        <div class="chart-card" id="chart-export-area">
+          <div class="chart-header">
+            <div class="chart-title-row">
+              <h2 class="chart-title">Weekly Hours</h2>
+              @if (selectedCustomerName) {
+                <span class="chart-subtitle">{{ selectedCustomerName }}</span>
+              }
+              @if (!selectedCustomerId) {
+                <span class="chart-subtitle">All Customers</span>
+              }
+            </div>
+            <div class="chart-legend">
+              <span class="legend-item unbilled"><span class="legend-swatch"></span>Unbilled</span>
+              <span class="legend-item billed"><span class="legend-swatch"></span>Billed</span>
+              <span class="legend-item paid"><span class="legend-swatch"></span>Paid</span>
+            </div>
           </div>
-          <div class="chart-legend">
-            <span class="legend-item unbilled"><span class="legend-swatch"></span>Unbilled</span>
-            <span class="legend-item billed"><span class="legend-swatch"></span>Billed</span>
-            <span class="legend-item paid"><span class="legend-swatch"></span>Paid</span>
-          </div>
-        </div>
-
-        <!-- SVG Chart -->
-        <div class="chart-container" #chartContainer>
-          <svg [attr.width]="svgWidth" [attr.height]="svgHeight" class="chart-svg">
-            <!-- Y-axis gridlines & labels -->
-            <g *ngFor="let tick of yTicks">
-              <line
-                [attr.x1]="chartLeft"
-                [attr.y1]="yScale(tick)"
-                [attr.x2]="chartLeft + chartWidth"
-                [attr.y2]="yScale(tick)"
-                class="grid-line"
-              />
+          <!-- SVG Chart -->
+          <div class="chart-container" #chartContainer>
+            <svg [attr.width]="svgWidth" [attr.height]="svgHeight" class="chart-svg">
+              <!-- Y-axis gridlines & labels -->
+              @for (tick of yTicks; track tick) {
+                <g>
+                  <line
+                    [attr.x1]="chartLeft"
+                    [attr.y1]="yScale(tick)"
+                    [attr.x2]="chartLeft + chartWidth"
+                    [attr.y2]="yScale(tick)"
+                    class="grid-line"
+                    />
+                  <text
+                    [attr.x]="chartLeft - 8"
+                    [attr.y]="yScale(tick) + 4"
+                  class="axis-label y-label">{{ tick }}</text>
+                </g>
+              }
+              <!-- Bars -->
+              @for (bar of chartBars; track bar) {
+                <g>
+                  @for (seg of bar.segments; track seg) {
+                    <g>
+                      <rect
+                        [attr.x]="bar.x"
+                        [attr.y]="seg.y"
+                        [attr.width]="bar.width"
+                        [attr.height]="seg.height"
+                        [class]="'bar-seg bar-seg-' + seg.label"
+                        rx="2"
+                        />
+                    </g>
+                  }
+                  <!-- X-axis label -->
+                  <text
+                    [attr.x]="bar.x + bar.width / 2"
+                    [attr.y]="chartBottom + 16"
+                  class="axis-label x-label">{{ bar.weekLabel }}</text>
+                  <!-- Total label on top -->
+                  @if (bar.total > 0) {
+                    <text
+                      [attr.x]="bar.x + bar.width / 2"
+                      [attr.y]="yScale(bar.total) - 4"
+                    class="bar-total-label">{{ bar.total | number:'1.1-1' }}</text>
+                  }
+                </g>
+              }
+              <!-- Axes -->
+              <line [attr.x1]="chartLeft" [attr.y1]="chartTop" [attr.x2]="chartLeft" [attr.y2]="chartBottom" class="axis-line"/>
+              <line [attr.x1]="chartLeft" [attr.y1]="chartBottom" [attr.x2]="chartLeft + chartWidth" [attr.y2]="chartBottom" class="axis-line"/>
+              <!-- Y-axis title -->
               <text
-                [attr.x]="chartLeft - 8"
-                [attr.y]="yScale(tick) + 4"
-                class="axis-label y-label">{{ tick }}</text>
-            </g>
-
-            <!-- Bars -->
-            <g *ngFor="let bar of chartBars">
-              <g *ngFor="let seg of bar.segments">
-                <rect
-                  [attr.x]="bar.x"
-                  [attr.y]="seg.y"
-                  [attr.width]="bar.width"
-                  [attr.height]="seg.height"
-                  [class]="'bar-seg bar-seg-' + seg.label"
-                  rx="2"
-                />
-              </g>
-              <!-- X-axis label -->
-              <text
-                [attr.x]="bar.x + bar.width / 2"
-                [attr.y]="chartBottom + 16"
-                class="axis-label x-label">{{ bar.weekLabel }}</text>
-              <!-- Total label on top -->
-              <text
-                *ngIf="bar.total > 0"
-                [attr.x]="bar.x + bar.width / 2"
-                [attr.y]="yScale(bar.total) - 4"
-                class="bar-total-label">{{ bar.total | number:'1.1-1' }}</text>
-            </g>
-
-            <!-- Axes -->
-            <line [attr.x1]="chartLeft" [attr.y1]="chartTop" [attr.x2]="chartLeft" [attr.y2]="chartBottom" class="axis-line"/>
-            <line [attr.x1]="chartLeft" [attr.y1]="chartBottom" [attr.x2]="chartLeft + chartWidth" [attr.y2]="chartBottom" class="axis-line"/>
-
-            <!-- Y-axis title -->
-            <text
-              [attr.x]="14"
-              [attr.y]="chartTop + chartHeight / 2"
-              class="axis-title"
+                [attr.x]="14"
+                [attr.y]="chartTop + chartHeight / 2"
+                class="axis-title"
               [attr.transform]="'rotate(-90, 14, ' + (chartTop + chartHeight / 2) + ')'">Hours</text>
-          </svg>
+            </svg>
+          </div>
+          <!-- Summary Stats -->
+          <div class="stats-row">
+            <div class="stat-card">
+              <span class="stat-label">Total Hours</span>
+              <span class="stat-value">{{ totalHours | number:'1.1-1' }}</span>
+            </div>
+            <div class="stat-card unbilled">
+              <span class="stat-label">Unbilled</span>
+              <span class="stat-value">{{ unbilledTotal | number:'1.1-1' }}</span>
+            </div>
+            <div class="stat-card billed">
+              <span class="stat-label">Billed</span>
+              <span class="stat-value">{{ billedTotal | number:'1.1-1' }}</span>
+            </div>
+            <div class="stat-card paid">
+              <span class="stat-label">Paid</span>
+              <span class="stat-value">{{ paidTotal | number:'1.1-1' }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Weeks Shown</span>
+              <span class="stat-value">{{ weeks.length }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Avg Hrs / Week</span>
+              <span class="stat-value">{{ avgWeeklyHours | number:'1.1-1' }}</span>
+            </div>
+          </div>
+          <!-- Weekly Data Table -->
+          <div class="table-section">
+            <h3 class="table-title">Weekly Breakdown</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Week of</th>
+                  <th>Unbilled</th>
+                  <th>Billed</th>
+                  <th>Paid</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (w of weeks; track w) {
+                  <tr>
+                    <td class="week-cell">{{ w.weekLabel }}</td>
+                    <td class="hours-cell unbilled-text">{{ w.unbilled > 0 ? (w.unbilled | number:'1.1-1') : '—' }}</td>
+                    <td class="hours-cell billed-text">{{ w.billed > 0 ? (w.billed | number:'1.1-1') : '—' }}</td>
+                    <td class="hours-cell paid-text">{{ w.paid > 0 ? (w.paid | number:'1.1-1') : '—' }}</td>
+                    <td class="hours-cell total-text">{{ w.total | number:'1.1-1' }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td>Total</td>
+                  <td class="unbilled-text">{{ unbilledTotal | number:'1.1-1' }}</td>
+                  <td class="billed-text">{{ billedTotal | number:'1.1-1' }}</td>
+                  <td class="paid-text">{{ paidTotal | number:'1.1-1' }}</td>
+                  <td class="total-text">{{ totalHours | number:'1.1-1' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-
-        <!-- Summary Stats -->
-        <div class="stats-row">
-          <div class="stat-card">
-            <span class="stat-label">Total Hours</span>
-            <span class="stat-value">{{ totalHours | number:'1.1-1' }}</span>
-          </div>
-          <div class="stat-card unbilled">
-            <span class="stat-label">Unbilled</span>
-            <span class="stat-value">{{ unbilledTotal | number:'1.1-1' }}</span>
-          </div>
-          <div class="stat-card billed">
-            <span class="stat-label">Billed</span>
-            <span class="stat-value">{{ billedTotal | number:'1.1-1' }}</span>
-          </div>
-          <div class="stat-card paid">
-            <span class="stat-label">Paid</span>
-            <span class="stat-value">{{ paidTotal | number:'1.1-1' }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Weeks Shown</span>
-            <span class="stat-value">{{ weeks.length }}</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Avg Hrs / Week</span>
-            <span class="stat-value">{{ avgWeeklyHours | number:'1.1-1' }}</span>
-          </div>
-        </div>
-
-        <!-- Weekly Data Table -->
-        <div class="table-section">
-          <h3 class="table-title">Weekly Breakdown</h3>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Week of</th>
-                <th>Unbilled</th>
-                <th>Billed</th>
-                <th>Paid</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let w of weeks">
-                <td class="week-cell">{{ w.weekLabel }}</td>
-                <td class="hours-cell unbilled-text">{{ w.unbilled > 0 ? (w.unbilled | number:'1.1-1') : '—' }}</td>
-                <td class="hours-cell billed-text">{{ w.billed > 0 ? (w.billed | number:'1.1-1') : '—' }}</td>
-                <td class="hours-cell paid-text">{{ w.paid > 0 ? (w.paid | number:'1.1-1') : '—' }}</td>
-                <td class="hours-cell total-text">{{ w.total | number:'1.1-1' }}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="total-row">
-                <td>Total</td>
-                <td class="unbilled-text">{{ unbilledTotal | number:'1.1-1' }}</td>
-                <td class="billed-text">{{ billedTotal | number:'1.1-1' }}</td>
-                <td class="paid-text">{{ paidTotal | number:'1.1-1' }}</td>
-                <td class="total-text">{{ totalHours | number:'1.1-1' }}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
+      }
     </div>
-  `,
+    `,
   styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

@@ -17,7 +17,7 @@ import { Invoice } from '../../models/invoice.model';
         </div>
         <a routerLink="/invoices/generate" class="btn-primary">+ Generate Invoice</a>
       </div>
-
+    
       <div class="filters">
         <select class="form-control filter-select" [(ngModel)]="statusFilter" (ngModelChange)="filterInvoices()">
           <option value="">All Statuses</option>
@@ -33,53 +33,67 @@ import { Invoice } from '../../models/invoice.model';
           placeholder="Search by customer or invoice #..."
           [(ngModel)]="searchTerm"
           (ngModelChange)="filterInvoices()"
-        >
+          >
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading invoices...</p>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && filteredInvoices.length === 0">
-        <h3>No invoices found</h3>
-        <p *ngIf="statusFilter || searchTerm">Try adjusting your filters</p>
-        <p *ngIf="!statusFilter && !searchTerm">Generate your first invoice from unbilled time entries</p>
-        <a routerLink="/invoices/generate" class="btn-primary" *ngIf="!statusFilter && !searchTerm">+ Generate Invoice</a>
-      </div>
-
-      <table class="data-table" *ngIf="!loading && filteredInvoices.length > 0">
-        <thead>
-          <tr>
-            <th>Invoice #</th>
-            <th>Customer</th>
-            <th>Issue Date</th>
-            <th>Due Date</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let invoice of filteredInvoices">
-            <td class="invoice-number">{{ invoice.invoiceNumber }}</td>
-            <td class="customer-name">{{ invoice.customerName }}</td>
-            <td>{{ formatDate(invoice.issueDate) }}</td>
-            <td>{{ formatDate(invoice.dueDate) }}</td>
-            <td class="amount-cell">\${{ invoice.total.toFixed(2) }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="invoice.status">
-                {{ invoice.status | titlecase }}
-              </span>
-            </td>
-            <td class="actions">
-              <a [routerLink]="['/invoices', invoice.id]" class="btn-action">View</a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading invoices...</p>
+        </div>
+      }
+    
+      @if (!loading && filteredInvoices.length === 0) {
+        <div class="empty-state">
+          <h3>No invoices found</h3>
+          @if (statusFilter || searchTerm) {
+            <p>Try adjusting your filters</p>
+          }
+          @if (!statusFilter && !searchTerm) {
+            <p>Generate your first invoice from unbilled time entries</p>
+          }
+          @if (!statusFilter && !searchTerm) {
+            <a routerLink="/invoices/generate" class="btn-primary">+ Generate Invoice</a>
+          }
+        </div>
+      }
+    
+      @if (!loading && filteredInvoices.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Customer</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invoice of filteredInvoices; track invoice) {
+              <tr>
+                <td class="invoice-number">{{ invoice.invoiceNumber }}</td>
+                <td class="customer-name">{{ invoice.customerName }}</td>
+                <td>{{ formatDate(invoice.issueDate) }}</td>
+                <td>{{ formatDate(invoice.dueDate) }}</td>
+                <td class="amount-cell">\${{ invoice.total.toFixed(2) }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="invoice.status">
+                    {{ invoice.status | titlecase }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <a [routerLink]="['/invoices', invoice.id]" class="btn-action">View</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

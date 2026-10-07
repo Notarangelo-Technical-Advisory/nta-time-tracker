@@ -14,189 +14,217 @@ import autoTable from 'jspdf-autotable';
       <div class="page-header">
         <div>
           <h1>{{ invoice?.invoiceNumber || 'Invoice' }}</h1>
-          <span class="status-badge" *ngIf="invoice" [ngClass]="invoice.status">
-            {{ invoice.status | titlecase }}
-          </span>
+          @if (invoice) {
+            <span class="status-badge" [ngClass]="invoice.status">
+              {{ invoice.status | titlecase }}
+            </span>
+          }
         </div>
         <div class="header-actions">
-          <button class="btn-secondary" (click)="downloadPDF()" *ngIf="invoice">Download PDF</button>
+          @if (invoice) {
+            <button class="btn-secondary" (click)="downloadPDF()">Download PDF</button>
+          }
           <a routerLink="/invoices" class="btn-secondary">Back to Invoices</a>
         </div>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading invoice...</p>
-      </div>
-
-      <div *ngIf="!loading && invoice" class="invoice-card">
-        <div class="invoice-header">
-          <div class="invoice-from">
-            <img src="assets/nta-logo.jpg" alt="NTA Logo" class="invoice-logo">
-            <p>Notarangelo Technical Advisory</p>
-          </div>
-          <div class="invoice-to">
-            <h4>Bill To</h4>
-            <p class="customer-name">{{ invoice.customerName }}</p>
-          </div>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading invoice...</p>
         </div>
-
-        <div class="invoice-meta">
-          <div class="meta-item">
-            <span class="meta-label">Invoice #</span>
-            <span class="meta-value">{{ invoice.invoiceNumber }}</span>
+      }
+    
+      @if (!loading && invoice) {
+        <div class="invoice-card">
+          <div class="invoice-header">
+            <div class="invoice-from">
+              <img src="assets/nta-logo.jpg" alt="NTA Logo" class="invoice-logo">
+              <p>Notarangelo Technical Advisory</p>
+            </div>
+            <div class="invoice-to">
+              <h4>Bill To</h4>
+              <p class="customer-name">{{ invoice.customerName }}</p>
+            </div>
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Issue Date</span>
-            <span class="meta-value">{{ formatDate(invoice.issueDate) }}</span>
+          <div class="invoice-meta">
+            <div class="meta-item">
+              <span class="meta-label">Invoice #</span>
+              <span class="meta-value">{{ invoice.invoiceNumber }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Issue Date</span>
+              <span class="meta-value">{{ formatDate(invoice.issueDate) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Due Date</span>
+              <span class="meta-value">{{ formatDate(invoice.dueDate) }}</span>
+            </div>
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Due Date</span>
-            <span class="meta-value">{{ formatDate(invoice.dueDate) }}</span>
+          <div class="invoice-section-header">
+            <h3>Summary</h3>
           </div>
-        </div>
-
-        <div class="invoice-section-header">
-          <h3>Summary</h3>
-        </div>
-        <table class="line-items-table summary-table">
-          <thead>
-            <tr>
-              <th>Project</th>
-              <th>Total Hours</th>
-              <th>Rate</th>
-              <th class="text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of invoiceSummaryRows">
-              <td>{{ row.projectName }}</td>
-              <td>{{ row.hours }}</td>
-              <td>\${{ row.rate.toFixed(2) }}/hr</td>
-              <td class="text-right">\${{ row.amount.toFixed(2) }}</td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="total-row">
-              <td colspan="3">Total</td>
-              <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
-            </tr>
-          </tfoot>
-        </table>
-
-        <div class="invoice-section-header">
-          <h3>Details</h3>
-        </div>
-        <table class="line-items-table details-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Hours</th>
-              <th>Rate</th>
-              <th class="text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <ng-container *ngFor="let group of groupedLineItems">
-              <tr class="project-header-row">
-                <td colspan="4">{{ group.projectName }}</td>
+          <table class="line-items-table summary-table">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Total Hours</th>
+                <th>Rate</th>
+                <th class="text-right">Amount</th>
               </tr>
-              <ng-container *ngFor="let item of group.items">
+            </thead>
+            <tbody>
+              @for (row of invoiceSummaryRows; track row) {
                 <tr>
-                  <td class="date-cell">{{ getDatePart(item.description) }}</td>
-                  <td>{{ item.hours }}</td>
-                  <td>\${{ item.rate.toFixed(2) }}/hr</td>
-                  <td class="text-right">\${{ item.amount.toFixed(2) }}</td>
+                  <td>{{ row.projectName }}</td>
+                  <td>{{ row.hours }}</td>
+                  <td>\${{ row.rate.toFixed(2) }}/hr</td>
+                  <td class="text-right">\${{ row.amount.toFixed(2) }}</td>
                 </tr>
-                <tr *ngIf="getDescriptionPart(item.description)" class="desc-row">
-                  <td colspan="4" class="desc-cell">{{ getDescriptionPart(item.description) }}</td>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td colspan="3">Total</td>
+                <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="invoice-section-header">
+            <h3>Details</h3>
+          </div>
+          <table class="line-items-table details-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Hours</th>
+                <th>Rate</th>
+                <th class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (group of groupedLineItems; track group) {
+                <tr class="project-header-row">
+                  <td colspan="4">{{ group.projectName }}</td>
                 </tr>
-              </ng-container>
-            </ng-container>
-          </tbody>
-        </table>
-
-        <div class="invoice-notes" *ngIf="invoice.notes">
-          <h4>Notes</h4>
-          <p>{{ invoice.notes }}</p>
+                @for (item of group.items; track item) {
+                  <tr>
+                    <td class="date-cell">{{ getDatePart(item.description) }}</td>
+                    <td>{{ item.hours }}</td>
+                    <td>\${{ item.rate.toFixed(2) }}/hr</td>
+                    <td class="text-right">\${{ item.amount.toFixed(2) }}</td>
+                  </tr>
+                  @if (getDescriptionPart(item.description)) {
+                    <tr class="desc-row">
+                      <td colspan="4" class="desc-cell">{{ getDescriptionPart(item.description) }}</td>
+                    </tr>
+                  }
+                }
+              }
+            </tbody>
+          </table>
+          @if (invoice.notes) {
+            <div class="invoice-notes">
+              <h4>Notes</h4>
+              <p>{{ invoice.notes }}</p>
+            </div>
+          }
+          @if (invoice.status !== 'cancelled' && invoice.status !== 'paid') {
+            <div class="invoice-actions">
+              @if (invoice.status === 'draft') {
+                <button class="btn-action-status" (click)="updateStatus('sent')">
+                  Mark as Sent
+                </button>
+              }
+              @if (invoice.status === 'sent' || invoice.status === 'overdue') {
+                <button class="btn-action-status btn-success" (click)="updateStatus('paid')">
+                  Mark as Paid
+                </button>
+              }
+              <button class="btn-action-status btn-danger-outline" (click)="showCancelConfirm = true">
+                Cancel Invoice
+              </button>
+            </div>
+          }
+          @if (invoice.status === 'cancelled') {
+            <div class="invoice-actions">
+              <button class="btn-action-status" (click)="reopen()" [disabled]="reopening">
+                {{ reopening ? 'Reopening...' : 'Reopen Invoice' }}
+              </button>
+              <span class="action-hint">Returns this invoice to draft and re-bills its time entries.</span>
+            </div>
+          }
         </div>
-
-        <div class="invoice-actions" *ngIf="invoice.status !== 'cancelled' && invoice.status !== 'paid'">
-          <button class="btn-action-status" *ngIf="invoice.status === 'draft'" (click)="updateStatus('sent')">
-            Mark as Sent
-          </button>
-          <button class="btn-action-status btn-success" *ngIf="invoice.status === 'sent' || invoice.status === 'overdue'" (click)="updateStatus('paid')">
-            Mark as Paid
-          </button>
-          <button class="btn-action-status btn-danger-outline" (click)="showCancelConfirm = true">
-            Cancel Invoice
-          </button>
-        </div>
-
-        <div class="invoice-actions" *ngIf="invoice.status === 'cancelled'">
-          <button class="btn-action-status" (click)="reopen()" [disabled]="reopening">
-            {{ reopening ? 'Reopening...' : 'Reopen Invoice' }}
-          </button>
-          <span class="action-hint">Returns this invoice to draft and re-bills its time entries.</span>
-        </div>
-      </div>
-
+      }
+    
       <!-- Cancel confirmation -->
-      <div class="modal-overlay" *ngIf="showCancelConfirm && invoice" (click)="showCancelConfirm = false">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Cancel Invoice</h3>
-          <p>
-            This voids <strong>{{ invoice.invoiceNumber }}</strong> and returns its
-            {{ invoice.timeEntryIds.length }}
-            {{ invoice.timeEntryIds.length === 1 ? 'time entry' : 'time entries' }}
-            ({{ totalHours }} hrs) to the unbilled pool, where they can be put on a new invoice.
-          </p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="showCancelConfirm = false">Keep Invoice</button>
-            <button class="btn-danger" (click)="cancelInvoice()" [disabled]="cancelling">
-              {{ cancelling ? 'Cancelling...' : 'Cancel Invoice' }}
-            </button>
+      @if (showCancelConfirm && invoice) {
+        <div class="modal-overlay" (click)="showCancelConfirm = false">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3>Cancel Invoice</h3>
+            <p>
+              This voids <strong>{{ invoice.invoiceNumber }}</strong> and returns its
+              {{ invoice.timeEntryIds.length }}
+              {{ invoice.timeEntryIds.length === 1 ? 'time entry' : 'time entries' }}
+              ({{ totalHours }} hrs) to the unbilled pool, where they can be put on a new invoice.
+            </p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="showCancelConfirm = false">Keep Invoice</button>
+              <button class="btn-danger" (click)="cancelInvoice()" [disabled]="cancelling">
+                {{ cancelling ? 'Cancelling...' : 'Cancel Invoice' }}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
+      }
+    
       <!-- Reopen refused: entries are no longer free to re-bill -->
-      <div class="modal-overlay" *ngIf="reopenBlockers" (click)="reopenBlockers = null">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Can't Reopen This Invoice</h3>
-          <p>
-            {{ reopenBlockers.length }} of its
-            {{ reopenBlockers.length === 1 ? 'time entry is' : 'time entries are' }}
-            no longer free to bill. Reopening would charge the same hours twice.
-          </p>
-          <ul class="blocker-list">
-            <li *ngFor="let blocker of reopenBlockers">
-              <ng-container *ngIf="blocker.date; else unknownEntry">
-                {{ formatDate(blocker.date) }} ({{ blocker.hours }} hrs)
-              </ng-container>
-              <ng-template #unknownEntry>This invoice's entry</ng-template>
-              <ng-container [ngSwitch]="blocker.reason">
-                <span *ngSwitchCase="'missing'">was deleted.</span>
-                <span *ngSwitchCase="'claimed'">
-                  <ng-container *ngIf="blocker.claimedBy; else notUnbilled">
-                    is already on {{ blocker.claimedBy }}.
-                  </ng-container>
-                  <ng-template #notUnbilled>is no longer unbilled.</ng-template>
-                </span>
-              </ng-container>
-            </li>
-          </ul>
-          <p class="modal-footnote">
-            To rebill this work, remove those entries from the other invoice first, or
-            generate a new invoice for whatever is still unbilled.
-          </p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="reopenBlockers = null">Close</button>
+      @if (reopenBlockers) {
+        <div class="modal-overlay" (click)="reopenBlockers = null">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3>Can't Reopen This Invoice</h3>
+            <p>
+              {{ reopenBlockers.length }} of its
+              {{ reopenBlockers.length === 1 ? 'time entry is' : 'time entries are' }}
+              no longer free to bill. Reopening would charge the same hours twice.
+            </p>
+            <ul class="blocker-list">
+              @for (blocker of reopenBlockers; track blocker) {
+                <li>
+                  @if (blocker.date) {
+                    {{ formatDate(blocker.date) }} ({{ blocker.hours }} hrs)
+                  } @else {
+                    This invoice's entry
+                  }
+                  @switch (blocker.reason) {
+                    @case ('missing') {
+                      <span>was deleted.</span>
+                    }
+                    @case ('claimed') {
+                      <span>
+                        @if (blocker.claimedBy) {
+                          is already on {{ blocker.claimedBy }}.
+                        } @else {
+                          is no longer unbilled.
+                        }
+                      </span>
+                    }
+                  }
+                </li>
+              }
+            </ul>
+            <p class="modal-footnote">
+              To rebill this work, remove those entries from the other invoice first, or
+              generate a new invoice for whatever is still unbilled.
+            </p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="reopenBlockers = null">Close</button>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

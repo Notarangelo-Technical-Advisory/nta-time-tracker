@@ -19,69 +19,79 @@ import { Invite } from '../../models/invite.model';
           <p class="subtitle">Manage user accounts and roles</p>
         </div>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading users...</p>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && users.length === 0">
-        <h3>No users found</h3>
-        <p>Users appear here after they sign up.</p>
-      </div>
-
-      <table class="data-table" *ngIf="!loading && users.length > 0">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Display Name</th>
-            <th>Role</th>
-            <th>Linked Customer</th>
-            <th>Last Login</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let user of users">
-            <td class="email-cell">{{ user.email }}</td>
-            <td>{{ user.displayName || '—' }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="user.role">
-                {{ user.role | titlecase }}
-              </span>
-            </td>
-            <td>
-              <select
-                class="customer-select"
-                [ngModel]="user.customerId || ''"
-                (ngModelChange)="onCustomerLink(user, $event)"
-                [disabled]="user.role === 'admin'"
-              >
-                <option value="">— None —</option>
-                <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
-              </select>
-            </td>
-            <td class="date-cell">{{ formatDate(user.lastLogin) }}</td>
-            <td class="actions">
-              <button
-                class="btn-action"
-                (click)="toggleRole(user)"
-                [title]="user.role === 'admin' ? 'Switch to Customer' : 'Switch to Admin'"
-              >
-                {{ user.role === 'admin' ? 'Make Customer' : 'Make Admin' }}
-              </button>
-              <button class="btn-action btn-action-danger" (click)="confirmDelete(user)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading users...</p>
+        </div>
+      }
+    
+      @if (!loading && users.length === 0) {
+        <div class="empty-state">
+          <h3>No users found</h3>
+          <p>Users appear here after they sign up.</p>
+        </div>
+      }
+    
+      @if (!loading && users.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Display Name</th>
+              <th>Role</th>
+              <th>Linked Customer</th>
+              <th>Last Login</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users; track user) {
+              <tr>
+                <td class="email-cell">{{ user.email }}</td>
+                <td>{{ user.displayName || '—' }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="user.role">
+                    {{ user.role | titlecase }}
+                  </span>
+                </td>
+                <td>
+                  <select
+                    class="customer-select"
+                    [ngModel]="user.customerId || ''"
+                    (ngModelChange)="onCustomerLink(user, $event)"
+                    [disabled]="user.role === 'admin'"
+                    >
+                    <option value="">— None —</option>
+                    @for (c of customers; track c) {
+                      <option [value]="c.id">{{ c.companyName }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="date-cell">{{ formatDate(user.lastLogin) }}</td>
+                <td class="actions">
+                  <button
+                    class="btn-action"
+                    (click)="toggleRole(user)"
+                    [title]="user.role === 'admin' ? 'Switch to Customer' : 'Switch to Admin'"
+                    >
+                    {{ user.role === 'admin' ? 'Make Customer' : 'Make Admin' }}
+                  </button>
+                  <button class="btn-action btn-action-danger" (click)="confirmDelete(user)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    
       <!-- Invite Customer Section -->
       <div class="section-header">
         <h2>Invite Customer</h2>
         <p class="subtitle">Create an invite link for a new customer user</p>
       </div>
-
+    
       <div class="invite-form-card">
         <div class="invite-form">
           <div class="form-field">
@@ -92,7 +102,7 @@ import { Invite } from '../../models/invite.model';
               class="form-input"
               placeholder="user@example.com"
               [(ngModel)]="inviteEmail"
-            />
+              />
           </div>
           <div class="form-field">
             <label for="inviteCustomer">Assign to Customer</label>
@@ -100,90 +110,106 @@ import { Invite } from '../../models/invite.model';
               id="inviteCustomer"
               class="form-input"
               [(ngModel)]="inviteCustomerId"
-            >
+              >
               <option value="">— Select Customer —</option>
-              <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
+              @for (c of customers; track c) {
+                <option [value]="c.id">{{ c.companyName }}</option>
+              }
             </select>
           </div>
           <button
             class="btn-primary"
             (click)="createInvite()"
             [disabled]="!inviteEmail || !inviteCustomerId || creatingInvite"
-          >
+            >
             {{ creatingInvite ? 'Creating...' : 'Create Invite' }}
           </button>
         </div>
-
-        <div class="invite-error" *ngIf="inviteError">{{ inviteError }}</div>
-
-        <div class="invite-link-result" *ngIf="generatedLink">
-          <label>Invite Link (copy and share):</label>
-          <div class="link-copy-row">
-            <input type="text" class="form-input link-input" [value]="generatedLink" readonly />
-            <button class="btn-action" (click)="copyLink()">{{ linkCopied ? 'Copied!' : 'Copy' }}</button>
+    
+        @if (inviteError) {
+          <div class="invite-error">{{ inviteError }}</div>
+        }
+    
+        @if (generatedLink) {
+          <div class="invite-link-result">
+            <label>Invite Link (copy and share):</label>
+            <div class="link-copy-row">
+              <input type="text" class="form-input link-input" [value]="generatedLink" readonly />
+              <button class="btn-action" (click)="copyLink()">{{ linkCopied ? 'Copied!' : 'Copy' }}</button>
+            </div>
           </div>
-        </div>
+        }
       </div>
-
+    
       <!-- Pending Invites Section -->
-      <div class="section-header" *ngIf="invites.length > 0">
-        <h2>Invites</h2>
-      </div>
-
-      <table class="data-table" *ngIf="invites.length > 0">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Customer</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Expires</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let invite of invites">
-            <td class="email-cell">{{ invite.email }}</td>
-            <td>{{ invite.customerName }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="invite.status">
-                {{ invite.status | titlecase }}
-              </span>
-            </td>
-            <td class="date-cell">{{ formatDate(invite.createdAt) }}</td>
-            <td class="date-cell">{{ formatDate(invite.expiresAt) }}</td>
-            <td class="actions">
-              <button
-                class="btn-action"
-                *ngIf="invite.status === 'pending'"
-                (click)="copyInviteLink(invite)"
-              >
-                Copy Link
-              </button>
-              <button
-                class="btn-action btn-action-danger"
-                *ngIf="invite.status === 'pending'"
-                (click)="revokeInvite(invite)"
-              >
-                Revoke
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="modal-overlay" *ngIf="userToDelete" (click)="userToDelete = null">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Delete User</h3>
-          <p>Are you sure you want to delete <strong>{{ userToDelete.email }}</strong>? This removes their profile but not their Firebase Auth account.</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="userToDelete = null">Cancel</button>
-            <button class="btn-danger" (click)="deleteUser()">Delete</button>
+      @if (invites.length > 0) {
+        <div class="section-header">
+          <h2>Invites</h2>
+        </div>
+      }
+    
+      @if (invites.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invite of invites; track invite) {
+              <tr>
+                <td class="email-cell">{{ invite.email }}</td>
+                <td>{{ invite.customerName }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="invite.status">
+                    {{ invite.status | titlecase }}
+                  </span>
+                </td>
+                <td class="date-cell">{{ formatDate(invite.createdAt) }}</td>
+                <td class="date-cell">{{ formatDate(invite.expiresAt) }}</td>
+                <td class="actions">
+                  @if (invite.status === 'pending') {
+                    <button
+                      class="btn-action"
+                      (click)="copyInviteLink(invite)"
+                      >
+                      Copy Link
+                    </button>
+                  }
+                  @if (invite.status === 'pending') {
+                    <button
+                      class="btn-action btn-action-danger"
+                      (click)="revokeInvite(invite)"
+                      >
+                      Revoke
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    
+      @if (userToDelete) {
+        <div class="modal-overlay" (click)="userToDelete = null">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3>Delete User</h3>
+            <p>Are you sure you want to delete <strong>{{ userToDelete.email }}</strong>? This removes their profile but not their Firebase Auth account.</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="userToDelete = null">Cancel</button>
+              <button class="btn-danger" (click)="deleteUser()">Delete</button>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

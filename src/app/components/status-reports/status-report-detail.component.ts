@@ -14,127 +14,151 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
       <div class="page-header">
         <div>
           <h1>{{ report?.reportNumber ?? 'Status Report' }}</h1>
-          <p class="subtitle" *ngIf="report">
-            {{ report.customerName }} &nbsp;·&nbsp;
-            {{ formatDate(report.periodStart) }} – {{ formatDate(report.periodEnd) }}
-          </p>
+          @if (report) {
+            <p class="subtitle">
+              {{ report.customerName }} &nbsp;·&nbsp;
+              {{ formatDate(report.periodStart) }} – {{ formatDate(report.periodEnd) }}
+            </p>
+          }
         </div>
         <a routerLink="/status-reports" class="btn-secondary">← Back to Reports</a>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading report...</p>
-      </div>
-
-      <div *ngIf="!loading && report">
-        <!-- Report header card -->
-        <div class="meta-card">
-          <div class="meta-header">
-            <img src="assets/nta-logo.jpg" alt="Notarangelo Technical Advisory" class="report-logo" />
-            <h2 class="report-title">Status Report</h2>
-          </div>
-          <div class="meta-grid">
-            <div class="meta-item">
-              <span class="meta-label">Report Number</span>
-              <span class="meta-value report-num">{{ report.reportNumber }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Customer</span>
-              <span class="meta-value">{{ report.customerName }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Period</span>
-              <span class="meta-value">{{ formatDate(report.periodStart) }} – {{ formatDate(report.periodEnd) }}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Status</span>
-              <span class="status-badge" [ngClass]="report.status">{{ report.status | titlecase }}</span>
-            </div>
-            <div class="meta-item" *ngIf="avgHoursPerWeek !== null">
-              <span class="meta-label">Avg Hrs/Week Since Inception</span>
-              <span class="meta-value">{{ avgHoursPerWeek }} hrs/wk</span>
-            </div>
-          </div>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading report...</p>
         </div>
-
-        <!-- AI-generated sections. Skip any section with no activities: those
-             are orphaned carried-forward outcome records (e.g. from a project
-             rename) that redundantly duplicate an active section's outcomes.
-             ngIf inside ngFor so si stays the true index into report.sections
-             (the inline-edit handlers index into that array). -->
-        <div class="sections-list">
-          <ng-container *ngFor="let section of report.sections; let si = index">
-          <div class="report-section" *ngIf="section.activities.length > 0">
-            <h2 class="project-name">{{ section.projectName }}</h2>
-
-            <div class="section-block">
-              <h3 class="block-label">Activities</h3>
-              <ul class="bullet-list">
-                <li *ngFor="let item of section.activities; let ai = index" class="editable-item">
-                  <span *ngIf="!isEditing(si, 'activity', ai)" (click)="startEdit(si, 'activity', ai, item)" class="item-text">{{ item }}</span>
-                  <div *ngIf="isEditing(si, 'activity', ai)" class="edit-inline">
-                    <textarea [(ngModel)]="editValue" rows="2" class="edit-input" (keydown.escape)="cancelEdit()" (keydown.enter)="$event.preventDefault(); saveEdit(si, 'activity', ai)"></textarea>
-                    <div class="edit-actions">
-                      <button class="btn-save-sm" (click)="saveEdit(si, 'activity', ai)">Save</button>
-                      <button class="btn-cancel-sm" (click)="cancelEdit()">Cancel</button>
-                      <button class="btn-delete-sm" (click)="deleteItem(si, 'activity', ai)">Delete</button>
-                    </div>
+      }
+    
+      @if (!loading && report) {
+        <div>
+          <!-- Report header card -->
+          <div class="meta-card">
+            <div class="meta-header">
+              <img src="assets/nta-logo.jpg" alt="Notarangelo Technical Advisory" class="report-logo" />
+              <h2 class="report-title">Status Report</h2>
+            </div>
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">Report Number</span>
+                <span class="meta-value report-num">{{ report.reportNumber }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Customer</span>
+                <span class="meta-value">{{ report.customerName }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Period</span>
+                <span class="meta-value">{{ formatDate(report.periodStart) }} – {{ formatDate(report.periodEnd) }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Status</span>
+                <span class="status-badge" [ngClass]="report.status">{{ report.status | titlecase }}</span>
+              </div>
+              @if (avgHoursPerWeek !== null) {
+                <div class="meta-item">
+                  <span class="meta-label">Avg Hrs/Week Since Inception</span>
+                  <span class="meta-value">{{ avgHoursPerWeek }} hrs/wk</span>
+                </div>
+              }
+            </div>
+          </div>
+          <!-- AI-generated sections. Skip any section with no activities: those
+          are orphaned carried-forward outcome records (e.g. from a project
+          rename) that redundantly duplicate an active section's outcomes.
+          @if inside @for so si stays the true index into report.sections
+          (the inline-edit handlers index into that array). -->
+          <div class="sections-list">
+            @for (section of report.sections; track section; let si = $index) {
+              @if (section.activities.length > 0) {
+                <div class="report-section">
+                  <h2 class="project-name">{{ section.projectName }}</h2>
+                  <div class="section-block">
+                    <h3 class="block-label">Activities</h3>
+                    <ul class="bullet-list">
+                      @for (item of section.activities; track item; let ai = $index) {
+                        <li class="editable-item">
+                          @if (!isEditing(si, 'activity', ai)) {
+                            <span (click)="startEdit(si, 'activity', ai, item)" class="item-text">{{ item }}</span>
+                          }
+                          @if (isEditing(si, 'activity', ai)) {
+                            <div class="edit-inline">
+                              <textarea [(ngModel)]="editValue" rows="2" class="edit-input" (keydown.escape)="cancelEdit()" (keydown.enter)="$event.preventDefault(); saveEdit(si, 'activity', ai)"></textarea>
+                              <div class="edit-actions">
+                                <button class="btn-save-sm" (click)="saveEdit(si, 'activity', ai)">Save</button>
+                                <button class="btn-cancel-sm" (click)="cancelEdit()">Cancel</button>
+                                <button class="btn-delete-sm" (click)="deleteItem(si, 'activity', ai)">Delete</button>
+                              </div>
+                            </div>
+                          }
+                        </li>
+                      }
+                    </ul>
+                    <button class="btn-add-item" (click)="addItem(si, 'activity')">+ Add activity</button>
                   </div>
-                </li>
-              </ul>
-              <button class="btn-add-item" (click)="addItem(si, 'activity')">+ Add activity</button>
-            </div>
-
-            <div class="section-block">
-              <h3 class="block-label">Outcomes</h3>
-              <ul class="bullet-list outcomes">
-                <li *ngFor="let item of section.outcomes; let oi = index" class="editable-item"
-                    [class.actual]="item.startsWith('Actual:')"
-                    [class.potential]="item.startsWith('Potential:')">
-                  <span *ngIf="!isEditing(si, 'outcome', oi)" (click)="startEdit(si, 'outcome', oi, item)" class="item-text">{{ item }}</span>
-                  <div *ngIf="isEditing(si, 'outcome', oi)" class="edit-inline">
-                    <textarea [(ngModel)]="editValue" rows="2" class="edit-input" (keydown.escape)="cancelEdit()" (keydown.enter)="$event.preventDefault(); saveEdit(si, 'outcome', oi)"></textarea>
-                    <div class="edit-actions">
-                      <button class="btn-save-sm" (click)="saveEdit(si, 'outcome', oi)">Save</button>
-                      <button class="btn-cancel-sm" (click)="cancelEdit()">Cancel</button>
-                      <button class="btn-delete-sm" (click)="deleteItem(si, 'outcome', oi)">Delete</button>
-                    </div>
+                  <div class="section-block">
+                    <h3 class="block-label">Outcomes</h3>
+                    <ul class="bullet-list outcomes">
+                      @for (item of section.outcomes; track item; let oi = $index) {
+                        <li class="editable-item"
+                          [class.actual]="item.startsWith('Actual:')"
+                          [class.potential]="item.startsWith('Potential:')">
+                          @if (!isEditing(si, 'outcome', oi)) {
+                            <span (click)="startEdit(si, 'outcome', oi, item)" class="item-text">{{ item }}</span>
+                          }
+                          @if (isEditing(si, 'outcome', oi)) {
+                            <div class="edit-inline">
+                              <textarea [(ngModel)]="editValue" rows="2" class="edit-input" (keydown.escape)="cancelEdit()" (keydown.enter)="$event.preventDefault(); saveEdit(si, 'outcome', oi)"></textarea>
+                              <div class="edit-actions">
+                                <button class="btn-save-sm" (click)="saveEdit(si, 'outcome', oi)">Save</button>
+                                <button class="btn-cancel-sm" (click)="cancelEdit()">Cancel</button>
+                                <button class="btn-delete-sm" (click)="deleteItem(si, 'outcome', oi)">Delete</button>
+                              </div>
+                            </div>
+                          }
+                        </li>
+                      }
+                    </ul>
+                    <button class="btn-add-item" (click)="addItem(si, 'outcome')">+ Add outcome</button>
                   </div>
-                </li>
-              </ul>
-              <button class="btn-add-item" (click)="addItem(si, 'outcome')">+ Add outcome</button>
-            </div>
+                </div>
+              }
+            }
           </div>
-          </ng-container>
+          <!-- Actions toolbar -->
+          <div class="actions-bar">
+            @if (report.status === 'draft') {
+              <button
+                class="btn-status"
+                (click)="updateStatus('sent')">
+                Mark as Sent
+              </button>
+            }
+            <button class="btn-export" (click)="downloadPDF()">
+              @if (exportingPDF) {
+                <span class="spinner-sm"></span>
+              }
+              {{ exportingPDF ? 'Exporting...' : 'Export PDF' }}
+            </button>
+            <button class="btn-export" (click)="downloadDOCX()">
+              @if (exportingDOCX) {
+                <span class="spinner-sm"></span>
+              }
+              {{ exportingDOCX ? 'Exporting...' : 'Export DOCX' }}
+            </button>
+            @if (report.status === 'draft') {
+              <button
+                class="btn-danger"
+                (click)="deleteReport()">
+                Delete Draft
+              </button>
+            }
+          </div>
         </div>
-
-        <!-- Actions toolbar -->
-        <div class="actions-bar">
-          <button
-            class="btn-status"
-            *ngIf="report.status === 'draft'"
-            (click)="updateStatus('sent')">
-            Mark as Sent
-          </button>
-          <button class="btn-export" (click)="downloadPDF()">
-            <span *ngIf="exportingPDF" class="spinner-sm"></span>
-            {{ exportingPDF ? 'Exporting...' : 'Export PDF' }}
-          </button>
-          <button class="btn-export" (click)="downloadDOCX()">
-            <span *ngIf="exportingDOCX" class="spinner-sm"></span>
-            {{ exportingDOCX ? 'Exporting...' : 'Export DOCX' }}
-          </button>
-          <button
-            class="btn-danger"
-            *ngIf="report.status === 'draft'"
-            (click)="deleteReport()">
-            Delete Draft
-          </button>
-        </div>
-      </div>
+      }
     </div>
-  `,
+    `,
   styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

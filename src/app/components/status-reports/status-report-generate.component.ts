@@ -23,7 +23,7 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
         <h1>Generate Status Report</h1>
         <a routerLink="/status-reports" class="btn-secondary">Cancel</a>
       </div>
-
+    
       <!-- Step indicators -->
       <div class="steps">
         <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
@@ -41,236 +41,254 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
           <span class="step-label">Review &amp; Generate</span>
         </div>
       </div>
-
+    
       <!-- ─── Step 1: Select Customer ─── -->
-      <div class="step-content" *ngIf="currentStep === 1">
-        <div class="form-card">
-          <h2>Select Customer</h2>
-          <p class="step-desc">Choose the customer this status report is for.</p>
-          <div class="customer-list">
-            <div
-              *ngFor="let c of customers"
-              class="customer-option"
-              [class.selected]="selectedCustomer?.id === c.id"
-              (click)="selectCustomer(c)">
-              <div class="customer-info">
-                <span class="customer-name">{{ c.companyName }}</span>
-                <span class="customer-contact">{{ c.billablePersonName }}</span>
-              </div>
+      @if (currentStep === 1) {
+        <div class="step-content">
+          <div class="form-card">
+            <h2>Select Customer</h2>
+            <p class="step-desc">Choose the customer this status report is for.</p>
+            <div class="customer-list">
+              @for (c of customers; track c) {
+                <div
+                  class="customer-option"
+                  [class.selected]="selectedCustomer?.id === c.id"
+                  (click)="selectCustomer(c)">
+                  <div class="customer-info">
+                    <span class="customer-name">{{ c.companyName }}</span>
+                    <span class="customer-contact">{{ c.billablePersonName }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="step-actions">
+              <button class="btn-primary" [disabled]="!selectedCustomer" (click)="goToStep2()">
+                Next: Select Time Entries
+              </button>
             </div>
           </div>
-          <div class="step-actions">
-            <button class="btn-primary" [disabled]="!selectedCustomer" (click)="goToStep2()">
-              Next: Select Time Entries
-            </button>
-          </div>
         </div>
-      </div>
-
+      }
+    
       <!-- ─── Step 2: Select Entries ─── -->
-      <div class="step-content" *ngIf="currentStep === 2">
-        <div class="form-card">
-          <h2>Time Entries for {{ selectedCustomer?.companyName }}</h2>
-          <p class="step-desc">Select the entries to include. All billing statuses are shown.</p>
-
-          <div class="loading-state" *ngIf="loadingEntries">
-            <div class="loading-spinner"></div>
-            <p>Loading entries...</p>
-          </div>
-
-          <div class="empty-state" *ngIf="!loadingEntries && allEntries.length === 0">
-            <p>No time entries found for this customer.</p>
-            <button class="btn-secondary" (click)="currentStep = 1">Back</button>
-          </div>
-
-          <div *ngIf="!loadingEntries && allEntries.length > 0">
-            <!-- Date range filter -->
-            <div class="date-filters">
-              <div class="filter-group">
-                <label class="form-label">From</label>
-                <input type="date" class="form-control" [(ngModel)]="filterFrom" (ngModelChange)="applyFilter()">
+      @if (currentStep === 2) {
+        <div class="step-content">
+          <div class="form-card">
+            <h2>Time Entries for {{ selectedCustomer?.companyName }}</h2>
+            <p class="step-desc">Select the entries to include. All billing statuses are shown.</p>
+            @if (loadingEntries) {
+              <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Loading entries...</p>
               </div>
-              <div class="filter-group">
-                <label class="form-label">To</label>
-                <input type="date" class="form-control" [(ngModel)]="filterTo" (ngModelChange)="applyFilter()">
+            }
+            @if (!loadingEntries && allEntries.length === 0) {
+              <div class="empty-state">
+                <p>No time entries found for this customer.</p>
+                <button class="btn-secondary" (click)="currentStep = 1">Back</button>
               </div>
-              <button class="btn-ghost" *ngIf="filterFrom || filterTo" (click)="clearFilter()">Clear</button>
-            </div>
-
-            <div class="select-all">
-              <label>
-                <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll()">
-                Select All ({{ filteredEntries.length }} entries, {{ totalFilteredHours }} hours)
-              </label>
-            </div>
-
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Date</th>
-                  <th>Hours</th>
-                  <th>Project</th>
-                  <th>Description</th>
-                  <th>Status</th>
-                  <th>Invoice</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let entry of filteredEntries" (click)="toggleEntry(entry)">
-                  <td><input type="checkbox" [checked]="isSelected(entry)" (click)="$event.stopPropagation()" (change)="toggleEntry(entry)"></td>
-                  <td class="date-cell">{{ formatDate(entry.date) }}</td>
-                  <td class="hours-cell">{{ entry.durationHours }}</td>
-                  <td>{{ getProjectName(entry.projectId) }}</td>
-                  <td class="desc-cell">{{ entry.description || '—' }}</td>
-                  <td><span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span></td>
-                  <td class="invoice-ref">{{ getInvoiceNumber(entry.invoiceId) }}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="selection-summary" *ngIf="selectedEntries.length > 0">
-              <span>{{ selectedEntries.length }} entries selected ({{ selectedHours }} hours)</span>
-            </div>
-
-            <div class="step-actions">
-              <button class="btn-secondary" (click)="currentStep = 1">Back</button>
-              <button class="btn-primary" [disabled]="selectedEntries.length === 0" (click)="goToStep3()">
-                Next: Review &amp; Generate
-              </button>
-            </div>
+            }
+            @if (!loadingEntries && allEntries.length > 0) {
+              <div>
+                <!-- Date range filter -->
+                <div class="date-filters">
+                  <div class="filter-group">
+                    <label class="form-label">From</label>
+                    <input type="date" class="form-control" [(ngModel)]="filterFrom" (ngModelChange)="applyFilter()">
+                  </div>
+                  <div class="filter-group">
+                    <label class="form-label">To</label>
+                    <input type="date" class="form-control" [(ngModel)]="filterTo" (ngModelChange)="applyFilter()">
+                  </div>
+                  @if (filterFrom || filterTo) {
+                    <button class="btn-ghost" (click)="clearFilter()">Clear</button>
+                  }
+                </div>
+                <div class="select-all">
+                  <label>
+                    <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll()">
+                    Select All ({{ filteredEntries.length }} entries, {{ totalFilteredHours }} hours)
+                  </label>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Date</th>
+                      <th>Hours</th>
+                      <th>Project</th>
+                      <th>Description</th>
+                      <th>Status</th>
+                      <th>Invoice</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (entry of filteredEntries; track entry) {
+                      <tr (click)="toggleEntry(entry)">
+                        <td><input type="checkbox" [checked]="isSelected(entry)" (click)="$event.stopPropagation()" (change)="toggleEntry(entry)"></td>
+                        <td class="date-cell">{{ formatDate(entry.date) }}</td>
+                        <td class="hours-cell">{{ entry.durationHours }}</td>
+                        <td>{{ getProjectName(entry.projectId) }}</td>
+                        <td class="desc-cell">{{ entry.description || '—' }}</td>
+                        <td><span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span></td>
+                        <td class="invoice-ref">{{ getInvoiceNumber(entry.invoiceId) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                @if (selectedEntries.length > 0) {
+                  <div class="selection-summary">
+                    <span>{{ selectedEntries.length }} entries selected ({{ selectedHours }} hours)</span>
+                  </div>
+                }
+                <div class="step-actions">
+                  <button class="btn-secondary" (click)="currentStep = 1">Back</button>
+                  <button class="btn-primary" [disabled]="selectedEntries.length === 0" (click)="goToStep3()">
+                    Next: Review &amp; Generate
+                  </button>
+                </div>
+              </div>
+            }
           </div>
         </div>
-      </div>
-
+      }
+    
       <!-- ─── Step 3: Review & Generate ─── -->
-      <div class="step-content" *ngIf="currentStep === 3">
-        <div class="form-card">
-
-          <!-- Phase: preview (before generation) -->
-          <ng-container *ngIf="phase === 'preview'">
-            <h2>Ready to Generate</h2>
-            <div class="report-meta">
-              <div class="meta-item">
-                <span class="meta-label">Customer</span>
-                <span class="meta-value">{{ selectedCustomer?.companyName }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Period</span>
-                <span class="meta-value">{{ formatDate(periodStart) }} – {{ formatDate(periodEnd) }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Entries</span>
-                <span class="meta-value">{{ selectedEntries.length }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">Total Hours</span>
-                <span class="meta-value">{{ selectedHours }}</span>
-              </div>
-              <div class="meta-item" *ngIf="avgHoursPerWeek !== null">
-                <span class="meta-label">Avg Hrs/Week (Since Inception)</span>
-                <span class="meta-value">{{ avgHoursPerWeek }} hrs/wk</span>
-              </div>
-            </div>
-
-            <table class="data-table preview-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Project</th>
-                  <th>Description</th>
-                  <th>Hours</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let entry of selectedEntries">
-                  <td class="date-cell">{{ formatDate(entry.date) }}</td>
-                  <td>{{ getProjectName(entry.projectId) }}</td>
-                  <td class="desc-cell">{{ entry.description || '—' }}</td>
-                  <td class="hours-cell">{{ entry.durationHours }}</td>
-                  <td><span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span></td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="error-message" *ngIf="error">
-              <p>{{ error }}</p>
-            </div>
-
-            <div class="step-actions">
-              <button class="btn-secondary" (click)="currentStep = 2">Back</button>
-              <button class="btn-primary" (click)="generateReport()">
-                Generate Report with AI
-              </button>
-            </div>
-          </ng-container>
-
-          <!-- Phase: generating (spinner) -->
-          <ng-container *ngIf="phase === 'generating'">
-            <div class="generating-state">
-              <div class="loading-spinner large"></div>
-              <h2>Generating Report...</h2>
-              <p>Claude is analyzing {{ selectedEntries.length }} time entries and writing your status report.</p>
-            </div>
-          </ng-container>
-
-          <!-- Phase: result (show AI output) -->
-          <ng-container *ngIf="phase === 'result'">
-            <div class="result-header">
-              <h2>Status Report Preview</h2>
-              <div class="result-meta">
-                <span>{{ selectedCustomer?.companyName }}</span>
-                <span class="meta-sep">·</span>
-                <span>{{ formatDate(periodStart) }} – {{ formatDate(periodEnd) }}</span>
-              </div>
-            </div>
-
-            <div class="sections-list">
-              <div class="report-section" *ngFor="let section of generatedSections">
-                <h3 class="project-name">{{ section.projectName }}</h3>
-
-                <div class="section-block">
-                  <h4 class="block-label">Activities</h4>
-                  <ul class="bullet-list">
-                    <li *ngFor="let item of section.activities">{{ item }}</li>
-                  </ul>
+      @if (currentStep === 3) {
+        <div class="step-content">
+          <div class="form-card">
+            <!-- Phase: preview (before generation) -->
+            @if (phase === 'preview') {
+              <h2>Ready to Generate</h2>
+              <div class="report-meta">
+                <div class="meta-item">
+                  <span class="meta-label">Customer</span>
+                  <span class="meta-value">{{ selectedCustomer?.companyName }}</span>
                 </div>
-
-                <div class="section-block">
-                  <h4 class="block-label">Outcomes</h4>
-                  <ul class="bullet-list outcomes">
-                    <li *ngFor="let item of section.outcomes"
-                        [class.actual]="item.startsWith('Actual:')"
-                        [class.potential]="item.startsWith('Potential:')">
-                      {{ item }}
-                    </li>
-                  </ul>
+                <div class="meta-item">
+                  <span class="meta-label">Period</span>
+                  <span class="meta-value">{{ formatDate(periodStart) }} – {{ formatDate(periodEnd) }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Entries</span>
+                  <span class="meta-value">{{ selectedEntries.length }}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Total Hours</span>
+                  <span class="meta-value">{{ selectedHours }}</span>
+                </div>
+                @if (avgHoursPerWeek !== null) {
+                  <div class="meta-item">
+                    <span class="meta-label">Avg Hrs/Week (Since Inception)</span>
+                    <span class="meta-value">{{ avgHoursPerWeek }} hrs/wk</span>
+                  </div>
+                }
+              </div>
+              <table class="data-table preview-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Project</th>
+                    <th>Description</th>
+                    <th>Hours</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of selectedEntries; track entry) {
+                    <tr>
+                      <td class="date-cell">{{ formatDate(entry.date) }}</td>
+                      <td>{{ getProjectName(entry.projectId) }}</td>
+                      <td class="desc-cell">{{ entry.description || '—' }}</td>
+                      <td class="hours-cell">{{ entry.durationHours }}</td>
+                      <td><span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (error) {
+                <div class="error-message">
+                  <p>{{ error }}</p>
+                </div>
+              }
+              <div class="step-actions">
+                <button class="btn-secondary" (click)="currentStep = 2">Back</button>
+                <button class="btn-primary" (click)="generateReport()">
+                  Generate Report with AI
+                </button>
+              </div>
+            }
+            <!-- Phase: generating (spinner) -->
+            @if (phase === 'generating') {
+              <div class="generating-state">
+                <div class="loading-spinner large"></div>
+                <h2>Generating Report...</h2>
+                <p>Claude is analyzing {{ selectedEntries.length }} time entries and writing your status report.</p>
+              </div>
+            }
+            <!-- Phase: result (show AI output) -->
+            @if (phase === 'result') {
+              <div class="result-header">
+                <h2>Status Report Preview</h2>
+                <div class="result-meta">
+                  <span>{{ selectedCustomer?.companyName }}</span>
+                  <span class="meta-sep">·</span>
+                  <span>{{ formatDate(periodStart) }} – {{ formatDate(periodEnd) }}</span>
                 </div>
               </div>
-            </div>
-
-            <div class="error-message" *ngIf="saveError">
-              <p>{{ saveError }}</p>
-            </div>
-
-            <div class="step-actions">
-              <button class="btn-secondary" (click)="phase = 'preview'">Regenerate</button>
-              <button class="btn-export" [disabled]="saving" (click)="saveAndExport('pdf')">
-                <span *ngIf="saving && exportType === 'pdf'" class="spinner-sm"></span>
-                {{ saving && exportType === 'pdf' ? 'Saving...' : 'Save & Export PDF' }}
-              </button>
-              <button class="btn-export" [disabled]="saving" (click)="saveAndExport('docx')">
-                <span *ngIf="saving && exportType === 'docx'" class="spinner-sm"></span>
-                {{ saving && exportType === 'docx' ? 'Saving...' : 'Save & Export DOCX' }}
-              </button>
-            </div>
-          </ng-container>
-
+              <div class="sections-list">
+                @for (section of generatedSections; track section) {
+                  <div class="report-section">
+                    <h3 class="project-name">{{ section.projectName }}</h3>
+                    <div class="section-block">
+                      <h4 class="block-label">Activities</h4>
+                      <ul class="bullet-list">
+                        @for (item of section.activities; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </div>
+                    <div class="section-block">
+                      <h4 class="block-label">Outcomes</h4>
+                      <ul class="bullet-list outcomes">
+                        @for (item of section.outcomes; track item) {
+                          <li
+                            [class.actual]="item.startsWith('Actual:')"
+                            [class.potential]="item.startsWith('Potential:')">
+                            {{ item }}
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                }
+              </div>
+              @if (saveError) {
+                <div class="error-message">
+                  <p>{{ saveError }}</p>
+                </div>
+              }
+              <div class="step-actions">
+                <button class="btn-secondary" (click)="phase = 'preview'">Regenerate</button>
+                <button class="btn-export" [disabled]="saving" (click)="saveAndExport('pdf')">
+                  @if (saving && exportType === 'pdf') {
+                    <span class="spinner-sm"></span>
+                  }
+                  {{ saving && exportType === 'pdf' ? 'Saving...' : 'Save & Export PDF' }}
+                </button>
+                <button class="btn-export" [disabled]="saving" (click)="saveAndExport('docx')">
+                  @if (saving && exportType === 'docx') {
+                    <span class="spinner-sm"></span>
+                  }
+                  {{ saving && exportType === 'docx' ? 'Saving...' : 'Save & Export DOCX' }}
+                </button>
+              </div>
+            }
+          </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
   styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

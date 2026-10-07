@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -8,6 +8,8 @@ import { provideFirebase } from './firebase';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    // Angular 21+ defaults to zoneless; this app still relies on zone.js.
+    provideZoneChangeDetection(),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(),
     importProvidersFrom(ReactiveFormsModule),

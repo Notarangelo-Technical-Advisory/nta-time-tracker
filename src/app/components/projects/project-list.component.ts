@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../services/project.service';
@@ -9,7 +9,7 @@ import { Customer } from '../../models/customer.model';
 
 @Component({
     selector: 'app-project-list',
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [RouterLink, FormsModule],
     template: `
     <div class="page-container">
       <div class="page-header">
@@ -19,7 +19,7 @@ import { Customer } from '../../models/customer.model';
         </div>
         <a routerLink="/projects/new" class="btn-primary">+ New Project</a>
       </div>
-
+    
       <div class="filters">
         <input
           type="text"
@@ -27,10 +27,12 @@ import { Customer } from '../../models/customer.model';
           placeholder="Search projects..."
           [(ngModel)]="searchTerm"
           (ngModelChange)="filterProjects()"
-        >
+          >
         <select class="form-control filter-select" [(ngModel)]="customerFilter" (ngModelChange)="filterProjects()">
           <option value="">All Customers</option>
-          <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
+          @for (c of customers; track c) {
+            <option [value]="c.id">{{ c.companyName }}</option>
+          }
         </select>
         <select class="form-control filter-select" [(ngModel)]="statusFilter" (ngModelChange)="filterProjects()">
           <option value="">All Statuses</option>
@@ -39,71 +41,93 @@ import { Customer } from '../../models/customer.model';
           <option value="on-hold">On Hold</option>
         </select>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading projects...</p>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && filteredProjects.length === 0">
-        <h3>No projects found</h3>
-        <p *ngIf="searchTerm || customerFilter || statusFilter">Try adjusting your filters</p>
-        <p *ngIf="!searchTerm && !customerFilter && !statusFilter">Get started by adding your first project</p>
-        <a routerLink="/projects/new" class="btn-primary" *ngIf="!searchTerm && !customerFilter && !statusFilter">+ Add Project</a>
-      </div>
-
-      <table class="data-table" *ngIf="!loading && filteredProjects.length > 0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Project</th>
-            <th>Customer</th>
-            <th>Rate</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let project of filteredProjects">
-            <td class="project-id">{{ project.projectId }}</td>
-            <td>
-              <div class="project-name">{{ project.projectName }}</div>
-              <div class="project-desc" *ngIf="project.description">{{ project.description }}</div>
-            </td>
-            <td>{{ getCustomerName(project.customerId) }}</td>
-            <td>
-              <span *ngIf="project.hourlyRate">\${{ project.hourlyRate }}/hr</span>
-              <span class="text-muted" *ngIf="!project.hourlyRate">Customer rate</span>
-            </td>
-            <td>
-              <span class="status-badge"
-                [class.active]="project.status === 'active'"
-                [class.completed]="project.status === 'completed'"
-                [class.on-hold]="project.status === 'on-hold'">
-                {{ project.status === 'on-hold' ? 'On Hold' : (project.status === 'active' ? 'Active' : 'Completed') }}
-              </span>
-            </td>
-            <td class="actions">
-              <a [routerLink]="['/projects', project.id, 'edit']" class="btn-action">Edit</a>
-              <button class="btn-action btn-action-danger" (click)="confirmDelete(project)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading projects...</p>
+        </div>
+      }
+    
+      @if (!loading && filteredProjects.length === 0) {
+        <div class="empty-state">
+          <h3>No projects found</h3>
+          @if (searchTerm || customerFilter || statusFilter) {
+            <p>Try adjusting your filters</p>
+          }
+          @if (!searchTerm && !customerFilter && !statusFilter) {
+            <p>Get started by adding your first project</p>
+          }
+          @if (!searchTerm && !customerFilter && !statusFilter) {
+            <a routerLink="/projects/new" class="btn-primary">+ Add Project</a>
+          }
+        </div>
+      }
+    
+      @if (!loading && filteredProjects.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Project</th>
+              <th>Customer</th>
+              <th>Rate</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (project of filteredProjects; track project) {
+              <tr>
+                <td class="project-id">{{ project.projectId }}</td>
+                <td>
+                  <div class="project-name">{{ project.projectName }}</div>
+                  @if (project.description) {
+                    <div class="project-desc">{{ project.description }}</div>
+                  }
+                </td>
+                <td>{{ getCustomerName(project.customerId) }}</td>
+                <td>
+                  @if (project.hourlyRate) {
+                    <span>\${{ project.hourlyRate }}/hr</span>
+                  }
+                  @if (!project.hourlyRate) {
+                    <span class="text-muted">Customer rate</span>
+                  }
+                </td>
+                <td>
+                  <span class="status-badge"
+                    [class.active]="project.status === 'active'"
+                    [class.completed]="project.status === 'completed'"
+                    [class.on-hold]="project.status === 'on-hold'">
+                    {{ project.status === 'on-hold' ? 'On Hold' : (project.status === 'active' ? 'Active' : 'Completed') }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <a [routerLink]="['/projects', project.id, 'edit']" class="btn-action">Edit</a>
+                  <button class="btn-action btn-action-danger" (click)="confirmDelete(project)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    
       <!-- Delete confirmation modal -->
-      <div class="modal-overlay" *ngIf="projectToDelete" (click)="projectToDelete = null">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Delete Project</h3>
-          <p>Are you sure you want to delete <strong>{{ projectToDelete.projectName }}</strong>? This action cannot be undone.</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="projectToDelete = null">Cancel</button>
-            <button class="btn-danger" (click)="deleteProject()">Delete</button>
+      @if (projectToDelete) {
+        <div class="modal-overlay" (click)="projectToDelete = null">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3>Delete Project</h3>
+            <p>Are you sure you want to delete <strong>{{ projectToDelete.projectName }}</strong>? This action cannot be undone.</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="projectToDelete = null">Cancel</button>
+              <button class="btn-danger" (click)="deleteProject()">Delete</button>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

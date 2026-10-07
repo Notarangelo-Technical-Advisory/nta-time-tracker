@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ProjectService } from '../../services/project.service';
@@ -9,82 +9,88 @@ import { Customer } from '../../models/customer.model';
 
 @Component({
     selector: 'app-project-form',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [ReactiveFormsModule, RouterLink],
     template: `
     <div class="page-container">
       <div class="page-header">
         <h1>{{ isEditMode ? 'Edit Project' : 'New Project' }}</h1>
         <a routerLink="/projects" class="btn-secondary">Cancel</a>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading project...</p>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading" class="form-card">
-        <div class="form-section">
-          <h2>Project Details</h2>
-
-          <div class="form-group">
-            <label class="form-label" for="customerId">Customer <span class="required">*</span></label>
-            <select class="form-control" id="customerId" formControlName="customerId">
-              <option value="">Select a customer...</option>
-              <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
-            </select>
-            <div class="form-error" *ngIf="form.get('customerId')?.touched && form.get('customerId')?.hasError('required')">
-              Customer is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="projectName">Project Name <span class="required">*</span></label>
-            <input class="form-control" id="projectName" formControlName="projectName" placeholder="e.g., Website Redesign">
-            <div class="form-error" *ngIf="form.get('projectName')?.touched && form.get('projectName')?.hasError('required')">
-              Project name is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="description">Description</label>
-            <textarea class="form-control" id="description" formControlName="description" rows="3" placeholder="Brief description of the project scope"></textarea>
-          </div>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading project...</p>
         </div>
-
-        <div class="form-section">
-          <h2>Billing & Status</h2>
-
-          <div class="form-row">
+      }
+    
+      @if (!loading) {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card">
+          <div class="form-section">
+            <h2>Project Details</h2>
             <div class="form-group">
-              <label class="form-label" for="hourlyRate">Hourly Rate Override ($)</label>
-              <input class="form-control" id="hourlyRate" type="number" formControlName="hourlyRate" min="0" step="0.01" placeholder="Leave blank to use customer rate">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="status">Status</label>
-              <select class="form-control" id="status" formControlName="status">
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="on-hold">On Hold</option>
+              <label class="form-label" for="customerId">Customer <span class="required">*</span></label>
+              <select class="form-control" id="customerId" formControlName="customerId">
+                <option value="">Select a customer...</option>
+                @for (c of customers; track c) {
+                  <option [value]="c.id">{{ c.companyName }}</option>
+                }
               </select>
+              @if (form.get('customerId')?.touched && form.get('customerId')?.hasError('required')) {
+                <div class="form-error">
+                  Customer is required
+                </div>
+              }
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="projectName">Project Name <span class="required">*</span></label>
+              <input class="form-control" id="projectName" formControlName="projectName" placeholder="e.g., Website Redesign">
+              @if (form.get('projectName')?.touched && form.get('projectName')?.hasError('required')) {
+                <div class="form-error">
+                  Project name is required
+                </div>
+              }
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="description">Description</label>
+              <textarea class="form-control" id="description" formControlName="description" rows="3" placeholder="Brief description of the project scope"></textarea>
             </div>
           </div>
-        </div>
-
-        <div class="error-message" *ngIf="error">
-          <p>{{ error }}</p>
-        </div>
-
-        <div class="form-actions">
-          <a routerLink="/projects" class="btn-secondary">Cancel</a>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving">
-            <span class="spinner-border-sm" *ngIf="saving"></span>
-            {{ saving ? 'Saving...' : (isEditMode ? 'Update Project' : 'Create Project') }}
-          </button>
-        </div>
-      </form>
+          <div class="form-section">
+            <h2>Billing & Status</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="hourlyRate">Hourly Rate Override ($)</label>
+                <input class="form-control" id="hourlyRate" type="number" formControlName="hourlyRate" min="0" step="0.01" placeholder="Leave blank to use customer rate">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="status">Status</label>
+                <select class="form-control" id="status" formControlName="status">
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="on-hold">On Hold</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          @if (error) {
+            <div class="error-message">
+              <p>{{ error }}</p>
+            </div>
+          }
+          <div class="form-actions">
+            <a routerLink="/projects" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid || saving">
+              @if (saving) {
+                <span class="spinner-border-sm"></span>
+              }
+              {{ saving ? 'Saving...' : (isEditMode ? 'Update Project' : 'Create Project') }}
+            </button>
+          </div>
+        </form>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

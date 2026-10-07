@@ -16,133 +16,146 @@ import { Invoice } from '../../models/invoice.model';
       <div class="page-header">
         <h1>Dashboard</h1>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading dashboard...</p>
-      </div>
-
-      <div *ngIf="!loading">
-        <!-- Summary Cards -->
-        <div class="summary-cards">
-          <div class="summary-card">
-            <span class="card-label">Unbilled Hours</span>
-            <span class="card-value warning">{{ unbilledHours }}</span>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      }
+    
+      @if (!loading) {
+        <div>
+          <!-- Summary Cards -->
+          <div class="summary-cards">
+            <div class="summary-card">
+              <span class="card-label">Unbilled Hours</span>
+              <span class="card-value warning">{{ unbilledHours }}</span>
+            </div>
+            <div class="summary-card">
+              <span class="card-label">Outstanding Invoices</span>
+              <span class="card-value danger">\${{ outstandingTotal.toFixed(2) }}</span>
+            </div>
+            <div class="summary-card">
+              <span class="card-label">This Month Revenue</span>
+              <span class="card-value success">\${{ monthlyRevenue.toFixed(2) }}</span>
+            </div>
+            <div class="summary-card">
+              <span class="card-label">Active Customers</span>
+              <span class="card-value primary">{{ activeCustomerCount }}</span>
+            </div>
           </div>
-          <div class="summary-card">
-            <span class="card-label">Outstanding Invoices</span>
-            <span class="card-value danger">\${{ outstandingTotal.toFixed(2) }}</span>
+          <!-- Quick Actions -->
+          <div class="section">
+            <h2>Quick Actions</h2>
+            <div class="quick-actions">
+              <a routerLink="/time-entries/new" class="action-card">
+                <span class="action-icon">+</span>
+                <span class="action-label">Log Time</span>
+                <span class="action-desc">Record hours for a customer</span>
+              </a>
+              <a routerLink="/invoices/generate" class="action-card">
+                <span class="action-icon">$</span>
+                <span class="action-label">Generate Invoice</span>
+                <span class="action-desc">Select a customer, pick unbilled entries, then review &amp; generate</span>
+              </a>
+              <a routerLink="/status-reports/generate" class="action-card">
+                <span class="action-icon">&#128196;</span>
+                <span class="action-label">Status Report</span>
+                <span class="action-desc">AI-generated report from billed or unbilled entries</span>
+              </a>
+              <a routerLink="/customers/new" class="action-card">
+                <span class="action-icon">&#64;</span>
+                <span class="action-label">Add Customer</span>
+                <span class="action-desc">Add a new billing customer</span>
+              </a>
+              <a routerLink="/projects/new" class="action-card">
+                <span class="action-icon">#</span>
+                <span class="action-label">New Project</span>
+                <span class="action-desc">Create a project for a customer</span>
+              </a>
+            </div>
           </div>
-          <div class="summary-card">
-            <span class="card-label">This Month Revenue</span>
-            <span class="card-value success">\${{ monthlyRevenue.toFixed(2) }}</span>
+          <!-- Recent Time Entries -->
+          <div class="section">
+            <div class="section-header">
+              <h2>Recent Time Entries</h2>
+              <a routerLink="/time-entries" class="view-all">View All</a>
+            </div>
+            @if (recentEntries.length > 0) {
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Hours</th>
+                    <th>Customer</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of recentEntries; track entry) {
+                    <tr>
+                      <td class="date-cell">{{ formatDate(entry.date) }}</td>
+                      <td class="hours-cell">{{ entry.durationHours }}</td>
+                      <td>{{ getCustomerName(entry.customerId) }}</td>
+                      <td class="desc-cell">{{ entry.description || '—' }}</td>
+                      <td>
+                        <span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @if (recentEntries.length === 0) {
+              <div class="empty-hint">
+                <p>No time entries yet. <a routerLink="/time-entries/new">Log your first entry</a></p>
+              </div>
+            }
           </div>
-          <div class="summary-card">
-            <span class="card-label">Active Customers</span>
-            <span class="card-value primary">{{ activeCustomerCount }}</span>
+          <!-- Recent Invoices -->
+          <div class="section">
+            <div class="section-header">
+              <h2>Recent Invoices</h2>
+              <a routerLink="/invoices" class="view-all">View All</a>
+            </div>
+            @if (recentInvoices.length > 0) {
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (invoice of recentInvoices; track invoice) {
+                    <tr>
+                      <td class="invoice-number">
+                        <a [routerLink]="['/invoices', invoice.id]">{{ invoice.invoiceNumber }}</a>
+                      </td>
+                      <td>{{ invoice.customerName }}</td>
+                      <td class="amount-cell">\${{ invoice.total.toFixed(2) }}</td>
+                      <td>
+                        <span class="status-badge" [ngClass]="invoice.status">{{ invoice.status | titlecase }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @if (recentInvoices.length === 0) {
+              <div class="empty-hint">
+                <p>No invoices yet. <a routerLink="/invoices/generate">Generate your first invoice</a></p>
+              </div>
+            }
           </div>
         </div>
-
-        <!-- Quick Actions -->
-        <div class="section">
-          <h2>Quick Actions</h2>
-          <div class="quick-actions">
-            <a routerLink="/time-entries/new" class="action-card">
-              <span class="action-icon">+</span>
-              <span class="action-label">Log Time</span>
-              <span class="action-desc">Record hours for a customer</span>
-            </a>
-            <a routerLink="/invoices/generate" class="action-card">
-              <span class="action-icon">$</span>
-              <span class="action-label">Generate Invoice</span>
-              <span class="action-desc">Select a customer, pick unbilled entries, then review &amp; generate</span>
-            </a>
-            <a routerLink="/status-reports/generate" class="action-card">
-              <span class="action-icon">&#128196;</span>
-              <span class="action-label">Status Report</span>
-              <span class="action-desc">AI-generated report from billed or unbilled entries</span>
-            </a>
-            <a routerLink="/customers/new" class="action-card">
-              <span class="action-icon">&#64;</span>
-              <span class="action-label">Add Customer</span>
-              <span class="action-desc">Add a new billing customer</span>
-            </a>
-            <a routerLink="/projects/new" class="action-card">
-              <span class="action-icon">#</span>
-              <span class="action-label">New Project</span>
-              <span class="action-desc">Create a project for a customer</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- Recent Time Entries -->
-        <div class="section">
-          <div class="section-header">
-            <h2>Recent Time Entries</h2>
-            <a routerLink="/time-entries" class="view-all">View All</a>
-          </div>
-          <table class="data-table" *ngIf="recentEntries.length > 0">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Hours</th>
-                <th>Customer</th>
-                <th>Description</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let entry of recentEntries">
-                <td class="date-cell">{{ formatDate(entry.date) }}</td>
-                <td class="hours-cell">{{ entry.durationHours }}</td>
-                <td>{{ getCustomerName(entry.customerId) }}</td>
-                <td class="desc-cell">{{ entry.description || '—' }}</td>
-                <td>
-                  <span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="empty-hint" *ngIf="recentEntries.length === 0">
-            <p>No time entries yet. <a routerLink="/time-entries/new">Log your first entry</a></p>
-          </div>
-        </div>
-
-        <!-- Recent Invoices -->
-        <div class="section">
-          <div class="section-header">
-            <h2>Recent Invoices</h2>
-            <a routerLink="/invoices" class="view-all">View All</a>
-          </div>
-          <table class="data-table" *ngIf="recentInvoices.length > 0">
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Customer</th>
-                <th>Total</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let invoice of recentInvoices">
-                <td class="invoice-number">
-                  <a [routerLink]="['/invoices', invoice.id]">{{ invoice.invoiceNumber }}</a>
-                </td>
-                <td>{{ invoice.customerName }}</td>
-                <td class="amount-cell">\${{ invoice.total.toFixed(2) }}</td>
-                <td>
-                  <span class="status-badge" [ngClass]="invoice.status">{{ invoice.status | titlecase }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="empty-hint" *ngIf="recentInvoices.length === 0">
-            <p>No invoices yet. <a routerLink="/invoices/generate">Generate your first invoice</a></p>
-          </div>
-        </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

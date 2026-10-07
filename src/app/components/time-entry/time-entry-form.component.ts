@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TimeEntryService } from '../../services/time-entry.service';
@@ -11,115 +11,134 @@ import { Project } from '../../models/project.model';
 
 @Component({
     selector: 'app-time-entry-form',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [ReactiveFormsModule, RouterLink],
     template: `
     <div class="page-container">
       <div class="page-header">
         <h1>{{ isEditMode ? 'Edit Time Entry' : 'New Time Entry' }}</h1>
         <a routerLink="/time-entries" class="btn-secondary">Cancel</a>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading time entry...</p>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading" class="form-card">
-        <div class="form-section">
-          <h2>Date & Time</h2>
-
-          <div class="form-group">
-            <label class="form-label" for="date">Date <span class="required">*</span></label>
-            <input class="form-control" id="date" type="date" formControlName="date">
-            <div class="form-error" *ngIf="form.get('date')?.touched && form.get('date')?.hasError('required')">
-              Date is required
-            </div>
-          </div>
-
-          <div class="form-row">
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading time entry...</p>
+        </div>
+      }
+    
+      @if (!loading) {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card">
+          <div class="form-section">
+            <h2>Date & Time</h2>
             <div class="form-group">
-              <label class="form-label" for="startTime">Start Time <span class="required">*</span></label>
-              <select class="form-control" id="startTime" formControlName="startTime" (ngModelChange)="onTimeChange()">
-                <option value="">Select start time...</option>
-                <option *ngFor="let slot of timeSlots" [value]="slot.value">{{ slot.label }}</option>
-              </select>
-              <div class="form-error" *ngIf="form.get('startTime')?.touched && form.get('startTime')?.hasError('required')">
-                Start time is required
+              <label class="form-label" for="date">Date <span class="required">*</span></label>
+              <input class="form-control" id="date" type="date" formControlName="date">
+              @if (form.get('date')?.touched && form.get('date')?.hasError('required')) {
+                <div class="form-error">
+                  Date is required
+                </div>
+              }
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="startTime">Start Time <span class="required">*</span></label>
+                <select class="form-control" id="startTime" formControlName="startTime" (ngModelChange)="onTimeChange()">
+                  <option value="">Select start time...</option>
+                  @for (slot of timeSlots; track slot) {
+                    <option [value]="slot.value">{{ slot.label }}</option>
+                  }
+                </select>
+                @if (form.get('startTime')?.touched && form.get('startTime')?.hasError('required')) {
+                  <div class="form-error">
+                    Start time is required
+                  </div>
+                }
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="endTime">End Time <span class="required">*</span></label>
+                <select class="form-control" id="endTime" formControlName="endTime" (ngModelChange)="onTimeChange()">
+                  <option value="">Select end time...</option>
+                  @for (slot of timeSlots; track slot) {
+                    <option [value]="slot.value">{{ slot.label }}</option>
+                  }
+                </select>
+                @if (form.get('endTime')?.touched && form.get('endTime')?.hasError('required')) {
+                  <div class="form-error">
+                    End time is required
+                  </div>
+                }
               </div>
             </div>
-
-            <div class="form-group">
-              <label class="form-label" for="endTime">End Time <span class="required">*</span></label>
-              <select class="form-control" id="endTime" formControlName="endTime" (ngModelChange)="onTimeChange()">
-                <option value="">Select end time...</option>
-                <option *ngFor="let slot of timeSlots" [value]="slot.value">{{ slot.label }}</option>
-              </select>
-              <div class="form-error" *ngIf="form.get('endTime')?.touched && form.get('endTime')?.hasError('required')">
-                End time is required
+            @if (calculatedDuration > 0) {
+              <div class="duration-display">
+                <span class="duration-label">Duration:</span>
+                <span class="duration-value">{{ calculatedDuration }} {{ calculatedDuration === 1 ? 'hour' : 'hours' }}</span>
+              </div>
+            }
+            @if (form.get('startTime')?.value && form.get('endTime')?.value && calculatedDuration <= 0) {
+              <div class="duration-warning">
+                End time must be after start time
+              </div>
+            }
+          </div>
+          <div class="form-section">
+            <h2>Customer & Project</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="customerId">Customer <span class="required">*</span></label>
+                <select class="form-control" id="customerId" formControlName="customerId" (change)="onCustomerChange()">
+                  <option value="">Select a customer...</option>
+                  @for (c of customers; track c) {
+                    <option [value]="c.id">{{ c.companyName }}</option>
+                  }
+                </select>
+                @if (form.get('customerId')?.touched && form.get('customerId')?.hasError('required')) {
+                  <div class="form-error">
+                    Customer is required
+                  </div>
+                }
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="projectId">Project <span class="required">*</span></label>
+                <select class="form-control" id="projectId" formControlName="projectId" [attr.disabled]="!form.get('customerId')?.value ? '' : null">
+                  <option value="">{{ form.get('customerId')?.value ? 'Select a project...' : 'Select a customer first' }}</option>
+                  @for (p of filteredProjects; track p) {
+                    <option [value]="p.id">{{ p.projectName }}</option>
+                  }
+                </select>
+                @if (form.get('projectId')?.touched && form.get('projectId')?.hasError('required')) {
+                  <div class="form-error">
+                    Project is required
+                  </div>
+                }
               </div>
             </div>
           </div>
-
-          <div class="duration-display" *ngIf="calculatedDuration > 0">
-            <span class="duration-label">Duration:</span>
-            <span class="duration-value">{{ calculatedDuration }} {{ calculatedDuration === 1 ? 'hour' : 'hours' }}</span>
-          </div>
-          <div class="duration-warning" *ngIf="form.get('startTime')?.value && form.get('endTime')?.value && calculatedDuration <= 0">
-            End time must be after start time
-          </div>
-        </div>
-
-        <div class="form-section">
-          <h2>Customer & Project</h2>
-
-          <div class="form-row">
+          <div class="form-section">
+            <h2>Details</h2>
             <div class="form-group">
-              <label class="form-label" for="customerId">Customer <span class="required">*</span></label>
-              <select class="form-control" id="customerId" formControlName="customerId" (change)="onCustomerChange()">
-                <option value="">Select a customer...</option>
-                <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
-              </select>
-              <div class="form-error" *ngIf="form.get('customerId')?.touched && form.get('customerId')?.hasError('required')">
-                Customer is required
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="projectId">Project <span class="required">*</span></label>
-              <select class="form-control" id="projectId" formControlName="projectId" [attr.disabled]="!form.get('customerId')?.value ? '' : null">
-                <option value="">{{ form.get('customerId')?.value ? 'Select a project...' : 'Select a customer first' }}</option>
-                <option *ngFor="let p of filteredProjects" [value]="p.id">{{ p.projectName }}</option>
-              </select>
-              <div class="form-error" *ngIf="form.get('projectId')?.touched && form.get('projectId')?.hasError('required')">
-                Project is required
-              </div>
+              <label class="form-label" for="description">Description</label>
+              <textarea class="form-control" id="description" formControlName="description" rows="3" placeholder="What did you work on?"></textarea>
             </div>
           </div>
-        </div>
-
-        <div class="form-section">
-          <h2>Details</h2>
-
-          <div class="form-group">
-            <label class="form-label" for="description">Description</label>
-            <textarea class="form-control" id="description" formControlName="description" rows="3" placeholder="What did you work on?"></textarea>
+          @if (error) {
+            <div class="error-message">
+              <p>{{ error }}</p>
+            </div>
+          }
+          <div class="form-actions">
+            <a routerLink="/time-entries" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid || saving || calculatedDuration <= 0">
+              @if (saving) {
+                <span class="spinner-border-sm"></span>
+              }
+              {{ saving ? 'Saving...' : (isEditMode ? 'Update Entry' : 'Log Time') }}
+            </button>
           </div>
-        </div>
-
-        <div class="error-message" *ngIf="error">
-          <p>{{ error }}</p>
-        </div>
-
-        <div class="form-actions">
-          <a routerLink="/time-entries" class="btn-secondary">Cancel</a>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving || calculatedDuration <= 0">
-            <span class="spinner-border-sm" *ngIf="saving"></span>
-            {{ saving ? 'Saving...' : (isEditMode ? 'Update Entry' : 'Log Time') }}
-          </button>
-        </div>
-      </form>
+        </form>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

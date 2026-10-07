@@ -17,7 +17,7 @@ import { StatusReport } from '../../models/status-report.model';
         </div>
         <a routerLink="/status-reports/generate" class="btn-primary">+ Generate Report</a>
       </div>
-
+    
       <div class="filters">
         <select class="form-control filter-select" [(ngModel)]="statusFilter" (ngModelChange)="filterReports()">
           <option value="">All Statuses</option>
@@ -31,51 +31,65 @@ import { StatusReport } from '../../models/status-report.model';
           [(ngModel)]="searchTerm"
           (ngModelChange)="filterReports()">
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading reports...</p>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && filteredReports.length === 0">
-        <h3>No status reports found</h3>
-        <p *ngIf="statusFilter || searchTerm">Try adjusting your filters</p>
-        <p *ngIf="!statusFilter && !searchTerm">Generate your first AI-powered status report</p>
-        <a routerLink="/status-reports/generate" class="btn-primary" *ngIf="!statusFilter && !searchTerm">
-          + Generate Report
-        </a>
-      </div>
-
-      <table class="data-table" *ngIf="!loading && filteredReports.length > 0">
-        <thead>
-          <tr>
-            <th>Report #</th>
-            <th>Customer</th>
-            <th>Period</th>
-            <th>Projects</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let report of filteredReports">
-            <td class="report-number">{{ report.reportNumber }}</td>
-            <td class="customer-name">{{ report.customerName }}</td>
-            <td class="period-cell">{{ formatDate(report.periodStart) }} – {{ formatDate(report.periodEnd) }}</td>
-            <td class="projects-cell">{{ report.sections?.length ?? 0 }} project{{ (report.sections?.length ?? 0) === 1 ? '' : 's' }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="report.status">
-                {{ report.status | titlecase }}
-              </span>
-            </td>
-            <td class="actions">
-              <a [routerLink]="['/status-reports', report.id]" class="btn-action">View</a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading reports...</p>
+        </div>
+      }
+    
+      @if (!loading && filteredReports.length === 0) {
+        <div class="empty-state">
+          <h3>No status reports found</h3>
+          @if (statusFilter || searchTerm) {
+            <p>Try adjusting your filters</p>
+          }
+          @if (!statusFilter && !searchTerm) {
+            <p>Generate your first AI-powered status report</p>
+          }
+          @if (!statusFilter && !searchTerm) {
+            <a routerLink="/status-reports/generate" class="btn-primary">
+              + Generate Report
+            </a>
+          }
+        </div>
+      }
+    
+      @if (!loading && filteredReports.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Report #</th>
+              <th>Customer</th>
+              <th>Period</th>
+              <th>Projects</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (report of filteredReports; track report) {
+              <tr>
+                <td class="report-number">{{ report.reportNumber }}</td>
+                <td class="customer-name">{{ report.customerName }}</td>
+                <td class="period-cell">{{ formatDate(report.periodStart) }} – {{ formatDate(report.periodEnd) }}</td>
+                <td class="projects-cell">{{ report.sections?.length ?? 0 }} project{{ (report.sections?.length ?? 0) === 1 ? '' : 's' }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="report.status">
+                    {{ report.status | titlecase }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <a [routerLink]="['/status-reports', report.id]" class="btn-action">View</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
     </div>
-  `,
+    `,
   styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

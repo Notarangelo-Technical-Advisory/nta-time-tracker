@@ -102,6 +102,6 @@ Report sections (`StatusReportSection`) are keyed by `projectName`. Activities a
 Zero-activity sections are therefore filtered out in three places — **do not "restore" them**:
 
 - `functions/src/index.ts` — `generateStatusReport` drops them before returning (stops new reports saving/re-persisting the orphan)
-- `src/app/components/status-reports/status-report-detail.component.ts` — page render (`*ngIf` inside `*ngFor`, preserving the true section index for inline edits) **and** both the PDF and DOCX export loops
+- `src/app/components/status-reports/status-report-detail.component.ts` — page render (`@if` inside `@for`, preserving the true section index for inline edits) **and** both the PDF and DOCX export loops
 
 If outcomes for a renamed project must survive, merge the stale `OutcomeRecord` into the active project's record and delete the old one — never reintroduce an activity-less section.

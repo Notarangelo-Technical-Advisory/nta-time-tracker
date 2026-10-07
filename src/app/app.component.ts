@@ -8,41 +8,42 @@ import { appVersion } from '../environments/version';
     selector: 'app-root',
     imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
     template: `
-    <div class="app-layout" *ngIf="authService.user$ | async as user; else noAuth">
-      <nav class="sidebar">
-        <div class="sidebar-header">
-          <img src="assets/nta-logo.jpg" alt="NTA logo" class="sidebar-logo">
-          <h2>Notarangelo Technical Advisory</h2>
-          <span class="sidebar-subtitle">Time & Invoicing</span>
-        </div>
-        <ul class="nav-links">
-          <ng-container *ngIf="isAdmin">
-            <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-            <li><a routerLink="/time-entries" routerLinkActive="active">Time Entries</a></li>
-            <li><a routerLink="/customers" routerLinkActive="active">Customers</a></li>
-            <li><a routerLink="/projects" routerLinkActive="active">Projects</a></li>
-            <li><a routerLink="/invoices" routerLinkActive="active">Invoices</a></li>
-            <li><a routerLink="/status-reports" routerLinkActive="active">Status Reports</a></li>
-            <li><a routerLink="/reports/hours" routerLinkActive="active">Hours Report</a></li>
-            <li><a routerLink="/users" routerLinkActive="active">Users</a></li>
-          </ng-container>
-          <ng-container *ngIf="!isAdmin && userRole === 'customer'">
-            <li><a routerLink="/portal" routerLinkActive="active">My Dashboard</a></li>
-          </ng-container>
-        </ul>
-        <div class="sidebar-footer">
-          <button class="btn-logout" (click)="authService.signOutUser()">Sign Out</button>
-          <span class="version-label">v{{ version }}</span>
-        </div>
-      </nav>
-      <main class="main-content">
-        <router-outlet></router-outlet>
-      </main>
-    </div>
-    <ng-template #noAuth>
+    @if (authService.user$ | async; as user) {
+      <div class="app-layout">
+        <nav class="sidebar">
+          <div class="sidebar-header">
+            <img src="assets/nta-logo.jpg" alt="NTA logo" class="sidebar-logo">
+            <h2>Notarangelo Technical Advisory</h2>
+            <span class="sidebar-subtitle">Time & Invoicing</span>
+          </div>
+          <ul class="nav-links">
+            @if (isAdmin) {
+              <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+              <li><a routerLink="/time-entries" routerLinkActive="active">Time Entries</a></li>
+              <li><a routerLink="/customers" routerLinkActive="active">Customers</a></li>
+              <li><a routerLink="/projects" routerLinkActive="active">Projects</a></li>
+              <li><a routerLink="/invoices" routerLinkActive="active">Invoices</a></li>
+              <li><a routerLink="/status-reports" routerLinkActive="active">Status Reports</a></li>
+              <li><a routerLink="/reports/hours" routerLinkActive="active">Hours Report</a></li>
+              <li><a routerLink="/users" routerLinkActive="active">Users</a></li>
+            }
+            @if (!isAdmin && userRole === 'customer') {
+              <li><a routerLink="/portal" routerLinkActive="active">My Dashboard</a></li>
+            }
+          </ul>
+          <div class="sidebar-footer">
+            <button class="btn-logout" (click)="authService.signOutUser()">Sign Out</button>
+            <span class="version-label">v{{ version }}</span>
+          </div>
+        </nav>
+        <main class="main-content">
+          <router-outlet></router-outlet>
+        </main>
+      </div>
+    } @else {
       <router-outlet></router-outlet>
-    </ng-template>
-  `,
+    }
+    `,
     styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {

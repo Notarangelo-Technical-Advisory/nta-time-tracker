@@ -1,55 +1,67 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
     selector: 'app-auth',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
     <div class="auth-container">
       <div class="auth-card">
         <img src="assets/nta-logo.jpg" alt="NTA logo" class="auth-logo">
         <h1>Notarangelo Technical Advisory</h1>
         <p class="subtitle">Time & Invoicing</p>
-
+    
         <div class="tab-bar">
           <button [class.active]="mode === 'login'" (click)="mode = 'login'">Sign In</button>
           <button [class.active]="mode === 'signup'" (click)="mode = 'signup'">Sign Up</button>
         </div>
-
+    
         <form (ngSubmit)="onSubmit()" class="auth-form">
           <div class="form-group">
             <label class="form-label" for="email">Email</label>
             <input class="form-control" id="email" type="email" [(ngModel)]="email" name="email" required>
           </div>
-
-          <div class="form-group" *ngIf="mode !== 'reset'">
-            <label class="form-label" for="password">Password</label>
-            <input class="form-control" id="password" type="password" [(ngModel)]="password" name="password" required>
-          </div>
-
-          <div class="error-message" *ngIf="error">
-            <p>{{ error }}</p>
-          </div>
-
-          <div class="success-message" *ngIf="successMessage">
-            <p>{{ successMessage }}</p>
-          </div>
-
+    
+          @if (mode !== 'reset') {
+            <div class="form-group">
+              <label class="form-label" for="password">Password</label>
+              <input class="form-control" id="password" type="password" [(ngModel)]="password" name="password" required>
+            </div>
+          }
+    
+          @if (error) {
+            <div class="error-message">
+              <p>{{ error }}</p>
+            </div>
+          }
+    
+          @if (successMessage) {
+            <div class="success-message">
+              <p>{{ successMessage }}</p>
+            </div>
+          }
+    
           <button type="submit" class="btn-primary w-100" [disabled]="loading">
-            <span class="spinner-border-sm" *ngIf="loading"></span>
+            @if (loading) {
+              <span class="spinner-border-sm"></span>
+            }
             {{ mode === 'login' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Reset Password' }}
           </button>
         </form>
-
+    
         <div class="auth-links">
-          <button *ngIf="mode !== 'reset'" class="link-btn" (click)="mode = 'reset'">Forgot password?</button>
-          <button *ngIf="mode === 'reset'" class="link-btn" (click)="mode = 'login'">Back to sign in</button>
+          @if (mode !== 'reset') {
+            <button class="link-btn" (click)="mode = 'reset'">Forgot password?</button>
+          }
+          @if (mode === 'reset') {
+            <button class="link-btn" (click)="mode = 'login'">Back to sign in</button>
+          }
         </div>
       </div>
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

@@ -14,87 +14,96 @@ import autoTable from 'jspdf-autotable';
       <div class="page-header">
         <div>
           <h1>{{ invoice?.invoiceNumber || 'Invoice' }}</h1>
-          <span class="status-badge" *ngIf="invoice" [ngClass]="invoice.status">
-            {{ invoice.status | titlecase }}
-          </span>
+          @if (invoice) {
+            <span class="status-badge" [ngClass]="invoice.status">
+              {{ invoice.status | titlecase }}
+            </span>
+          }
         </div>
         <div class="header-actions">
-          <button class="btn-secondary" (click)="downloadPDF()" *ngIf="invoice">Download PDF</button>
+          @if (invoice) {
+            <button class="btn-secondary" (click)="downloadPDF()">Download PDF</button>
+          }
           <a routerLink="/portal" class="btn-secondary">Back to Dashboard</a>
         </div>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading invoice...</p>
-      </div>
-
-      <div *ngIf="!loading && invoice" class="invoice-card">
-        <div class="invoice-header">
-          <div class="invoice-from">
-            <h3>Fractional Tech Advisory</h3>
-            <p>Jack Notarangelo</p>
-          </div>
-          <div class="invoice-to">
-            <h4>Bill To</h4>
-            <p class="customer-name">{{ invoice.customerName }}</p>
-          </div>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading invoice...</p>
         </div>
-
-        <div class="invoice-meta">
-          <div class="meta-item">
-            <span class="meta-label">Invoice #</span>
-            <span class="meta-value">{{ invoice.invoiceNumber }}</span>
+      }
+    
+      @if (!loading && invoice) {
+        <div class="invoice-card">
+          <div class="invoice-header">
+            <div class="invoice-from">
+              <h3>Fractional Tech Advisory</h3>
+              <p>Jack Notarangelo</p>
+            </div>
+            <div class="invoice-to">
+              <h4>Bill To</h4>
+              <p class="customer-name">{{ invoice.customerName }}</p>
+            </div>
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Issue Date</span>
-            <span class="meta-value">{{ formatDate(invoice.issueDate) }}</span>
+          <div class="invoice-meta">
+            <div class="meta-item">
+              <span class="meta-label">Invoice #</span>
+              <span class="meta-value">{{ invoice.invoiceNumber }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Issue Date</span>
+              <span class="meta-value">{{ formatDate(invoice.issueDate) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Due Date</span>
+              <span class="meta-value">{{ formatDate(invoice.dueDate) }}</span>
+            </div>
           </div>
-          <div class="meta-item">
-            <span class="meta-label">Due Date</span>
-            <span class="meta-value">{{ formatDate(invoice.dueDate) }}</span>
-          </div>
-        </div>
-
-        <table class="line-items-table">
-          <thead>
-            <tr>
-              <th>Hours</th>
-              <th>Rate</th>
-              <th class="text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            <ng-container *ngFor="let group of groupedLineItems">
-              <tr class="project-header-row">
-                <td colspan="3">{{ group.projectName }}</td>
+          <table class="line-items-table">
+            <thead>
+              <tr>
+                <th>Hours</th>
+                <th>Rate</th>
+                <th class="text-right">Amount</th>
               </tr>
-              <tr *ngFor="let item of group.items">
-                <td>{{ item.hours }}</td>
-                <td>\${{ item.rate.toFixed(2) }}/hr</td>
-                <td class="text-right">\${{ item.amount.toFixed(2) }}</td>
+            </thead>
+            <tbody>
+              @for (group of groupedLineItems; track group) {
+                <tr class="project-header-row">
+                  <td colspan="3">{{ group.projectName }}</td>
+                </tr>
+                @for (item of group.items; track item) {
+                  <tr>
+                    <td>{{ item.hours }}</td>
+                    <td>\${{ item.rate.toFixed(2) }}/hr</td>
+                    <td class="text-right">\${{ item.amount.toFixed(2) }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+            <tfoot>
+              <tr class="subtotal-row">
+                <td colspan="2">Subtotal</td>
+                <td class="text-right">\${{ invoice.subtotal.toFixed(2) }}</td>
               </tr>
-            </ng-container>
-          </tbody>
-          <tfoot>
-            <tr class="subtotal-row">
-              <td colspan="2">Subtotal</td>
-              <td class="text-right">\${{ invoice.subtotal.toFixed(2) }}</td>
-            </tr>
-            <tr class="total-row">
-              <td colspan="2">Total</td>
-              <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
-            </tr>
-          </tfoot>
-        </table>
-
-        <div class="invoice-notes" *ngIf="invoice.notes">
-          <h4>Notes</h4>
-          <p>{{ invoice.notes }}</p>
+              <tr class="total-row">
+                <td colspan="2">Total</td>
+                <td class="text-right">\${{ invoice.total.toFixed(2) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+          @if (invoice.notes) {
+            <div class="invoice-notes">
+              <h4>Notes</h4>
+              <p>{{ invoice.notes }}</p>
+            </div>
+          }
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

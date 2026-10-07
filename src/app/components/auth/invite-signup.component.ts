@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -12,66 +12,70 @@ import { AUTH, FIRESTORE } from '../../firebase';
 
 @Component({
     selector: 'app-invite-signup',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
     <div class="auth-container">
       <div class="auth-card">
         <img src="assets/nta-logo.jpg" alt="NTA logo" class="auth-logo">
         <h1>Notarangelo Technical Advisory</h1>
         <p class="subtitle">Time & Invoicing</p>
-
-        <div class="loading-state" *ngIf="loading">
-          <div class="loading-spinner"></div>
-          <p>Validating invite...</p>
-        </div>
-
-        <div *ngIf="!loading && !invite" class="error-state">
-          <h2>Invalid Invite</h2>
-          <p>This invitation link is invalid, expired, or has already been used.</p>
-          <a href="/auth" class="btn-primary">Go to Sign In</a>
-        </div>
-
-        <div *ngIf="!loading && invite">
-          <div class="invite-info">
-            <p>You've been invited to join as a customer of <strong>{{ invite.customerName }}</strong>.</p>
+    
+        @if (loading) {
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Validating invite...</p>
           </div>
-
-          <form (ngSubmit)="onSubmit()" class="auth-form">
-            <div class="form-group">
-              <label class="form-label" for="email">Email</label>
-              <input class="form-control disabled-input" id="email" type="email"
-                     [value]="invite.email" disabled>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="password">Password</label>
-              <input class="form-control" id="password" type="password"
-                     [(ngModel)]="password" name="password" required minlength="6">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="confirmPassword">Confirm Password</label>
-              <input class="form-control" id="confirmPassword" type="password"
-                     [(ngModel)]="confirmPassword" name="confirmPassword" required>
-            </div>
-
-            <div class="error-message" *ngIf="error">
-              <p>{{ error }}</p>
-            </div>
-
-            <button type="submit" class="btn-primary w-100" [disabled]="submitting">
-              <span class="spinner-border-sm" *ngIf="submitting"></span>
-              Create Account
-            </button>
-          </form>
-
-          <div class="auth-links">
-            <p>Already have an account? <a href="/auth">Sign in</a></p>
+        }
+    
+        @if (!loading && !invite) {
+          <div class="error-state">
+            <h2>Invalid Invite</h2>
+            <p>This invitation link is invalid, expired, or has already been used.</p>
+            <a href="/auth" class="btn-primary">Go to Sign In</a>
           </div>
-        </div>
+        }
+    
+        @if (!loading && invite) {
+          <div>
+            <div class="invite-info">
+              <p>You've been invited to join as a customer of <strong>{{ invite.customerName }}</strong>.</p>
+            </div>
+            <form (ngSubmit)="onSubmit()" class="auth-form">
+              <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input class="form-control disabled-input" id="email" type="email"
+                  [value]="invite.email" disabled>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input class="form-control" id="password" type="password"
+                  [(ngModel)]="password" name="password" required minlength="6">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="confirmPassword">Confirm Password</label>
+                <input class="form-control" id="confirmPassword" type="password"
+                  [(ngModel)]="confirmPassword" name="confirmPassword" required>
+              </div>
+              @if (error) {
+                <div class="error-message">
+                  <p>{{ error }}</p>
+                </div>
+              }
+              <button type="submit" class="btn-primary w-100" [disabled]="submitting">
+                @if (submitting) {
+                  <span class="spinner-border-sm"></span>
+                }
+                Create Account
+              </button>
+            </form>
+            <div class="auth-links">
+              <p>Already have an account? <a href="/auth">Sign in</a></p>
+            </div>
+          </div>
+        }
       </div>
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

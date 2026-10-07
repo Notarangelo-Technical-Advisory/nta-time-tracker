@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CustomerService } from '../../services/customer.service';
@@ -7,97 +7,102 @@ import { Customer } from '../../models/customer.model';
 
 @Component({
     selector: 'app-customer-form',
-    imports: [CommonModule, ReactiveFormsModule, RouterLink],
+    imports: [ReactiveFormsModule, RouterLink],
     template: `
     <div class="page-container">
       <div class="page-header">
         <h1>{{ isEditMode ? 'Edit Customer' : 'New Customer' }}</h1>
         <a routerLink="/customers" class="btn-secondary">Cancel</a>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading customer...</p>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!loading" class="form-card">
-        <div class="form-section">
-          <h2>Company Information</h2>
-
-          <div class="form-group">
-            <label class="form-label" for="companyName">Company Name <span class="required">*</span></label>
-            <input class="form-control" id="companyName" formControlName="companyName" placeholder="e.g., Acme Corp">
-            <div class="form-error" *ngIf="form.get('companyName')?.touched && form.get('companyName')?.hasError('required')">
-              Company name is required
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="address">Address</label>
-            <textarea class="form-control" id="address" formControlName="address" rows="2" placeholder="Street, City, State, ZIP"></textarea>
-          </div>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading customer...</p>
         </div>
-
-        <div class="form-section">
-          <h2>Billable Contact</h2>
-
-          <div class="form-group">
-            <label class="form-label" for="billablePersonName">Contact Name <span class="required">*</span></label>
-            <input class="form-control" id="billablePersonName" formControlName="billablePersonName" placeholder="e.g., Jane Smith">
-            <div class="form-error" *ngIf="form.get('billablePersonName')?.touched && form.get('billablePersonName')?.hasError('required')">
-              Billable contact name is required
+      }
+    
+      @if (!loading) {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-card">
+          <div class="form-section">
+            <h2>Company Information</h2>
+            <div class="form-group">
+              <label class="form-label" for="companyName">Company Name <span class="required">*</span></label>
+              <input class="form-control" id="companyName" formControlName="companyName" placeholder="e.g., Acme Corp">
+              @if (form.get('companyName')?.touched && form.get('companyName')?.hasError('required')) {
+                <div class="form-error">
+                  Company name is required
+                </div>
+              }
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="address">Address</label>
+              <textarea class="form-control" id="address" formControlName="address" rows="2" placeholder="Street, City, State, ZIP"></textarea>
             </div>
           </div>
-
-          <div class="form-row">
+          <div class="form-section">
+            <h2>Billable Contact</h2>
             <div class="form-group">
-              <label class="form-label" for="email">Email</label>
-              <input class="form-control" id="email" type="email" formControlName="email" placeholder="jane@acme.com">
-              <div class="form-error" *ngIf="form.get('email')?.touched && form.get('email')?.hasError('email')">
-                Enter a valid email address
+              <label class="form-label" for="billablePersonName">Contact Name <span class="required">*</span></label>
+              <input class="form-control" id="billablePersonName" formControlName="billablePersonName" placeholder="e.g., Jane Smith">
+              @if (form.get('billablePersonName')?.touched && form.get('billablePersonName')?.hasError('required')) {
+                <div class="form-error">
+                  Billable contact name is required
+                </div>
+              }
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input class="form-control" id="email" type="email" formControlName="email" placeholder="jane@acme.com">
+                @if (form.get('email')?.touched && form.get('email')?.hasError('email')) {
+                  <div class="form-error">
+                    Enter a valid email address
+                  </div>
+                }
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="phone">Phone</label>
+                <input class="form-control" id="phone" formControlName="phone" placeholder="(555) 123-4567">
               </div>
             </div>
-
-            <div class="form-group">
-              <label class="form-label" for="phone">Phone</label>
-              <input class="form-control" id="phone" formControlName="phone" placeholder="(555) 123-4567">
+          </div>
+          <div class="form-section">
+            <h2>Billing</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="hourlyRate">Hourly Rate ($)</label>
+                <input class="form-control" id="hourlyRate" type="number" formControlName="hourlyRate" min="0" step="0.01" placeholder="0.00">
+              </div>
+              @if (isEditMode) {
+                <div class="form-group">
+                  <label class="form-label" for="isActive">Status</label>
+                  <select class="form-control" id="isActive" formControlName="isActive">
+                    <option [ngValue]="true">Active</option>
+                    <option [ngValue]="false">Inactive</option>
+                  </select>
+                </div>
+              }
             </div>
           </div>
-        </div>
-
-        <div class="form-section">
-          <h2>Billing</h2>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="hourlyRate">Hourly Rate ($)</label>
-              <input class="form-control" id="hourlyRate" type="number" formControlName="hourlyRate" min="0" step="0.01" placeholder="0.00">
+          @if (error) {
+            <div class="error-message">
+              <p>{{ error }}</p>
             </div>
-
-            <div class="form-group" *ngIf="isEditMode">
-              <label class="form-label" for="isActive">Status</label>
-              <select class="form-control" id="isActive" formControlName="isActive">
-                <option [ngValue]="true">Active</option>
-                <option [ngValue]="false">Inactive</option>
-              </select>
-            </div>
+          }
+          <div class="form-actions">
+            <a routerLink="/customers" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary" [disabled]="form.invalid || saving">
+              @if (saving) {
+                <span class="spinner-border-sm"></span>
+              }
+              {{ saving ? 'Saving...' : (isEditMode ? 'Update Customer' : 'Create Customer') }}
+            </button>
           </div>
-        </div>
-
-        <div class="error-message" *ngIf="error">
-          <p>{{ error }}</p>
-        </div>
-
-        <div class="form-actions">
-          <a routerLink="/customers" class="btn-secondary">Cancel</a>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving">
-            <span class="spinner-border-sm" *ngIf="saving"></span>
-            {{ saving ? 'Saving...' : (isEditMode ? 'Update Customer' : 'Create Customer') }}
-          </button>
-        </div>
-      </form>
+        </form>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

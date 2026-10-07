@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { combineLatest, catchError, of } from 'rxjs';
@@ -13,14 +13,14 @@ import { Project } from '../../models/project.model';
 
 @Component({
     selector: 'app-invoice-generate',
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [FormsModule, RouterLink],
     template: `
     <div class="page-container">
       <div class="page-header">
         <h1>Generate Invoice</h1>
         <a routerLink="/invoices" class="btn-secondary">Cancel</a>
       </div>
-
+    
       <!-- Step indicators -->
       <div class="steps">
         <div class="step" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">
@@ -38,203 +38,216 @@ import { Project } from '../../models/project.model';
           <span class="step-label">Review & Generate</span>
         </div>
       </div>
-
+    
       <!-- Step 1: Select Customer -->
-      <div class="step-content" *ngIf="currentStep === 1">
-        <div class="form-card">
-          <h2>Select Customer</h2>
-          <p class="step-desc">Choose a customer to generate an invoice for.</p>
-
-          <div class="customer-list">
-            <div
-              *ngFor="let c of customers"
-              class="customer-option"
-              [class.selected]="selectedCustomer?.id === c.id"
-              (click)="selectCustomer(c)">
-              <div class="customer-info">
-                <span class="customer-name">{{ c.companyName }}</span>
-                <span class="customer-contact">{{ c.billablePersonName }}</span>
-              </div>
-              <span class="customer-rate" *ngIf="c.hourlyRate">\${{ c.hourlyRate }}/hr</span>
+      @if (currentStep === 1) {
+        <div class="step-content">
+          <div class="form-card">
+            <h2>Select Customer</h2>
+            <p class="step-desc">Choose a customer to generate an invoice for.</p>
+            <div class="customer-list">
+              @for (c of customers; track c) {
+                <div
+                  class="customer-option"
+                  [class.selected]="selectedCustomer?.id === c.id"
+                  (click)="selectCustomer(c)">
+                  <div class="customer-info">
+                    <span class="customer-name">{{ c.companyName }}</span>
+                    <span class="customer-contact">{{ c.billablePersonName }}</span>
+                  </div>
+                  @if (c.hourlyRate) {
+                    <span class="customer-rate">\${{ c.hourlyRate }}/hr</span>
+                  }
+                </div>
+              }
             </div>
-          </div>
-
-          <div class="step-actions">
-            <button class="btn-primary" [disabled]="!selectedCustomer" (click)="goToStep2()">
-              Next: Select Time Entries
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2: Select Time Entries -->
-      <div class="step-content" *ngIf="currentStep === 2">
-        <div class="form-card">
-          <h2>Unbilled Time Entries for {{ selectedCustomer?.companyName }}</h2>
-
-          <div class="loading-state" *ngIf="loadingEntries">
-            <div class="loading-spinner"></div>
-            <p>Loading unbilled entries...</p>
-          </div>
-
-          <div class="empty-state" *ngIf="!loadingEntries && unbilledEntries.length === 0">
-            <p>No unbilled time entries found for this customer.</p>
-            <button class="btn-secondary" (click)="currentStep = 1">Back to Customer Selection</button>
-          </div>
-
-          <div *ngIf="!loadingEntries && unbilledEntries.length > 0">
-            <div class="select-all">
-              <label>
-                <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll()">
-                Select All ({{ unbilledEntries.length }} entries, {{ totalUnbilledHours }} hours)
-              </label>
-            </div>
-
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Hours</th>
-                  <th>Project</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let entry of unbilledEntries" (click)="toggleEntry(entry)">
-                  <td><input type="checkbox" [checked]="isSelected(entry)" (click)="$event.stopPropagation();" (change)="toggleEntry(entry)"></td>
-                  <td>{{ formatDate(entry.date) }}</td>
-                  <td class="time-cell">{{ formatTime(entry.startTime) }} - {{ formatTime(entry.endTime) }}</td>
-                  <td class="hours-cell">{{ entry.durationHours }}</td>
-                  <td>{{ getProjectName(entry.projectId) }}</td>
-                  <td class="desc-cell">{{ entry.description || '—' }}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="selection-summary" *ngIf="selectedEntries.length > 0">
-              <span>{{ selectedEntries.length }} entries selected ({{ selectedHours }} hours)</span>
-            </div>
-
             <div class="step-actions">
-              <button class="btn-secondary" (click)="currentStep = 1">Back</button>
-              <button class="btn-primary" [disabled]="selectedEntries.length === 0" (click)="goToStep3()">
-                Next: Review Invoice
+              <button class="btn-primary" [disabled]="!selectedCustomer" (click)="goToStep2()">
+                Next: Select Time Entries
               </button>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Step 3: Review & Generate -->
-      <div class="step-content" *ngIf="currentStep === 3">
-        <div class="form-card">
-          <h2>Invoice Preview</h2>
-
-          <div class="invoice-meta">
-            <div class="meta-row">
-              <div class="meta-group">
-                <label class="form-label">Customer</label>
-                <span class="meta-value">{{ selectedCustomer?.companyName }}</span>
+      }
+    
+      <!-- Step 2: Select Time Entries -->
+      @if (currentStep === 2) {
+        <div class="step-content">
+          <div class="form-card">
+            <h2>Unbilled Time Entries for {{ selectedCustomer?.companyName }}</h2>
+            @if (loadingEntries) {
+              <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Loading unbilled entries...</p>
               </div>
-              <div class="meta-group">
-                <label class="form-label">Invoice Number</label>
-                <span class="meta-value preview-number">Will be auto-generated</span>
+            }
+            @if (!loadingEntries && unbilledEntries.length === 0) {
+              <div class="empty-state">
+                <p>No unbilled time entries found for this customer.</p>
+                <button class="btn-secondary" (click)="currentStep = 1">Back to Customer Selection</button>
               </div>
-            </div>
-            <div class="meta-row">
-              <div class="meta-group">
-                <label class="form-label">Issue Date</label>
-                <input type="date" class="form-control" [(ngModel)]="issueDate">
+            }
+            @if (!loadingEntries && unbilledEntries.length > 0) {
+              <div>
+                <div class="select-all">
+                  <label>
+                    <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll()">
+                    Select All ({{ unbilledEntries.length }} entries, {{ totalUnbilledHours }} hours)
+                  </label>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>Date</th>
+                      <th>Time</th>
+                      <th>Hours</th>
+                      <th>Project</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (entry of unbilledEntries; track entry) {
+                      <tr (click)="toggleEntry(entry)">
+                        <td><input type="checkbox" [checked]="isSelected(entry)" (click)="$event.stopPropagation();" (change)="toggleEntry(entry)"></td>
+                        <td>{{ formatDate(entry.date) }}</td>
+                        <td class="time-cell">{{ formatTime(entry.startTime) }} - {{ formatTime(entry.endTime) }}</td>
+                        <td class="hours-cell">{{ entry.durationHours }}</td>
+                        <td>{{ getProjectName(entry.projectId) }}</td>
+                        <td class="desc-cell">{{ entry.description || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                @if (selectedEntries.length > 0) {
+                  <div class="selection-summary">
+                    <span>{{ selectedEntries.length }} entries selected ({{ selectedHours }} hours)</span>
+                  </div>
+                }
+                <div class="step-actions">
+                  <button class="btn-secondary" (click)="currentStep = 1">Back</button>
+                  <button class="btn-primary" [disabled]="selectedEntries.length === 0" (click)="goToStep3()">
+                    Next: Review Invoice
+                  </button>
+                </div>
               </div>
-              <div class="meta-group">
-                <label class="form-label">Due Date</label>
-                <input type="date" class="form-control" [(ngModel)]="dueDate">
-              </div>
-            </div>
-          </div>
-
-          <div class="invoice-section-header">
-            <h3>Summary</h3>
-          </div>
-          <table class="data-table preview-table">
-            <thead>
-              <tr>
-                <th>Project</th>
-                <th>Total Hours</th>
-                <th>Rate</th>
-                <th class="amount-cell">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let row of previewSummaryRows">
-                <td>{{ row.projectName }}</td>
-                <td>{{ row.hours }}</td>
-                <td>\${{ row.rate }}/hr</td>
-                <td class="amount-cell">\${{ row.amount.toFixed(2) }}</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr class="total-row">
-                <td colspan="3">Total</td>
-                <td class="amount-cell">\${{ previewTotal.toFixed(2) }}</td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <div class="invoice-section-header">
-            <h3>Details</h3>
-          </div>
-          <table class="data-table preview-table details-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Hours</th>
-                <th>Rate</th>
-                <th class="amount-cell">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <ng-container *ngFor="let group of previewGroupedLineItems">
-                <tr class="project-header-row">
-                  <td colspan="4">{{ group.projectName }}</td>
-                </tr>
-                <ng-container *ngFor="let item of group.items">
-                  <tr>
-                    <td class="date-cell">{{ getDatePart(item.description) }}</td>
-                    <td>{{ item.hours }}</td>
-                    <td>\${{ item.rate }}/hr</td>
-                    <td class="amount-cell">\${{ item.amount.toFixed(2) }}</td>
-                  </tr>
-                  <tr *ngIf="getDescriptionPart(item.description)" class="desc-row">
-                    <td colspan="4" class="desc-cell">{{ getDescriptionPart(item.description) }}</td>
-                  </tr>
-                </ng-container>
-              </ng-container>
-            </tbody>
-          </table>
-
-          <div class="form-group notes-group">
-            <label class="form-label">Notes (optional)</label>
-            <textarea class="form-control" [(ngModel)]="invoiceNotes" rows="2" placeholder="Payment terms, additional notes..."></textarea>
-          </div>
-
-          <div class="error-message" *ngIf="error">
-            <p>{{ error }}</p>
-          </div>
-
-          <div class="step-actions">
-            <button class="btn-secondary" (click)="currentStep = 2">Back</button>
-            <button class="btn-primary" [disabled]="generating" (click)="generateInvoice()">
-              <span class="spinner-border-sm" *ngIf="generating"></span>
-              {{ generating ? 'Generating...' : 'Generate Invoice' }}
-            </button>
+            }
           </div>
         </div>
-      </div>
+      }
+    
+      <!-- Step 3: Review & Generate -->
+      @if (currentStep === 3) {
+        <div class="step-content">
+          <div class="form-card">
+            <h2>Invoice Preview</h2>
+            <div class="invoice-meta">
+              <div class="meta-row">
+                <div class="meta-group">
+                  <label class="form-label">Customer</label>
+                  <span class="meta-value">{{ selectedCustomer?.companyName }}</span>
+                </div>
+                <div class="meta-group">
+                  <label class="form-label">Invoice Number</label>
+                  <span class="meta-value preview-number">Will be auto-generated</span>
+                </div>
+              </div>
+              <div class="meta-row">
+                <div class="meta-group">
+                  <label class="form-label">Issue Date</label>
+                  <input type="date" class="form-control" [(ngModel)]="issueDate">
+                </div>
+                <div class="meta-group">
+                  <label class="form-label">Due Date</label>
+                  <input type="date" class="form-control" [(ngModel)]="dueDate">
+                </div>
+              </div>
+            </div>
+            <div class="invoice-section-header">
+              <h3>Summary</h3>
+            </div>
+            <table class="data-table preview-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Total Hours</th>
+                  <th>Rate</th>
+                  <th class="amount-cell">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of previewSummaryRows; track row) {
+                  <tr>
+                    <td>{{ row.projectName }}</td>
+                    <td>{{ row.hours }}</td>
+                    <td>\${{ row.rate }}/hr</td>
+                    <td class="amount-cell">\${{ row.amount.toFixed(2) }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="3">Total</td>
+                  <td class="amount-cell">\${{ previewTotal.toFixed(2) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+            <div class="invoice-section-header">
+              <h3>Details</h3>
+            </div>
+            <table class="data-table preview-table details-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Hours</th>
+                  <th>Rate</th>
+                  <th class="amount-cell">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (group of previewGroupedLineItems; track group) {
+                  <tr class="project-header-row">
+                    <td colspan="4">{{ group.projectName }}</td>
+                  </tr>
+                  @for (item of group.items; track item) {
+                    <tr>
+                      <td class="date-cell">{{ getDatePart(item.description) }}</td>
+                      <td>{{ item.hours }}</td>
+                      <td>\${{ item.rate }}/hr</td>
+                      <td class="amount-cell">\${{ item.amount.toFixed(2) }}</td>
+                    </tr>
+                    @if (getDescriptionPart(item.description)) {
+                      <tr class="desc-row">
+                        <td colspan="4" class="desc-cell">{{ getDescriptionPart(item.description) }}</td>
+                      </tr>
+                    }
+                  }
+                }
+              </tbody>
+            </table>
+            <div class="form-group notes-group">
+              <label class="form-label">Notes (optional)</label>
+              <textarea class="form-control" [(ngModel)]="invoiceNotes" rows="2" placeholder="Payment terms, additional notes..."></textarea>
+            </div>
+            @if (error) {
+              <div class="error-message">
+                <p>{{ error }}</p>
+              </div>
+            }
+            <div class="step-actions">
+              <button class="btn-secondary" (click)="currentStep = 2">Back</button>
+              <button class="btn-primary" [disabled]="generating" (click)="generateInvoice()">
+                @if (generating) {
+                  <span class="spinner-border-sm"></span>
+                }
+                {{ generating ? 'Generating...' : 'Generate Invoice' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

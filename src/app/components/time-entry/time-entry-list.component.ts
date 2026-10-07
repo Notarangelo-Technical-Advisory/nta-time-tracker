@@ -21,7 +21,7 @@ import { Project } from '../../models/project.model';
         </div>
         <a routerLink="/time-entries/new" class="btn-primary">+ Log Time</a>
       </div>
-
+    
       <div class="filters">
         <div class="filter-row">
           <div class="filter-group">
@@ -36,7 +36,9 @@ import { Project } from '../../models/project.model';
             <label class="filter-label">Customer</label>
             <select class="form-control" [(ngModel)]="customerFilter" (ngModelChange)="filterEntries()">
               <option value="">All Customers</option>
-              <option *ngFor="let c of customers" [value]="c.id">{{ c.companyName }}</option>
+              @for (c of customers; track c) {
+                <option [value]="c.id">{{ c.companyName }}</option>
+              }
             </select>
           </div>
           <div class="filter-group">
@@ -50,88 +52,116 @@ import { Project } from '../../models/project.model';
           </div>
         </div>
       </div>
-
-      <div class="summary-bar" *ngIf="!loading && filteredEntries.length > 0">
-        <div class="summary-item">
-          <span class="summary-label">Entries</span>
-          <span class="summary-value">{{ filteredEntries.length }}</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">Total Hours</span>
-          <span class="summary-value">{{ totalHours }}</span>
-        </div>
-        <div class="summary-item unbilled">
-          <span class="summary-label">Unbilled</span>
-          <span class="summary-value">{{ unbilledHours }} hrs</span>
-        </div>
-      </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading time entries...</p>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && filteredEntries.length === 0">
-        <h3>No time entries found</h3>
-        <p *ngIf="dateFrom || dateTo || customerFilter || statusFilter">Try adjusting your filters</p>
-        <p *ngIf="!dateFrom && !dateTo && !customerFilter && !statusFilter">Start logging your billable hours</p>
-        <a routerLink="/time-entries/new" class="btn-primary" *ngIf="!dateFrom && !dateTo && !customerFilter && !statusFilter">+ Log Time</a>
-      </div>
-
-      <table class="data-table" *ngIf="!loading && filteredEntries.length > 0">
-        <thead>
-          <tr>
-            <th class="sortable" (click)="sortBy('date')">Date <span class="sort-icon">{{ getSortIcon('date') }}</span></th>
-            <th class="sortable" (click)="sortBy('startTime')">Time <span class="sort-icon">{{ getSortIcon('startTime') }}</span></th>
-            <th class="sortable" (click)="sortBy('durationHours')">Hours <span class="sort-icon">{{ getSortIcon('durationHours') }}</span></th>
-            <th class="sortable" (click)="sortBy('customer')">Customer <span class="sort-icon">{{ getSortIcon('customer') }}</span></th>
-            <th class="sortable" (click)="sortBy('project')">Project <span class="sort-icon">{{ getSortIcon('project') }}</span></th>
-            <th>Description</th>
-            <th class="sortable" (click)="sortBy('status')">Status <span class="sort-icon">{{ getSortIcon('status') }}</span></th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let entry of filteredEntries">
-            <td class="date-cell">{{ formatDate(entry.date) }}</td>
-            <td class="time-cell">{{ formatTime(entry.startTime) }} - {{ formatTime(entry.endTime) }}</td>
-            <td class="hours-cell">{{ entry.durationHours }}</td>
-            <td>{{ getCustomerName(entry.customerId) }}</td>
-            <td>{{ getProjectName(entry.projectId) }}</td>
-            <td class="desc-cell">
-              <span *ngIf="entry.description">{{ entry.description }}</span>
-              <span class="text-muted" *ngIf="!entry.description">—</span>
-            </td>
-            <td>
-              <span class="status-badge"
-                [class.unbilled]="entry.status === 'unbilled'"
-                [class.billed]="entry.status === 'billed'"
-                [class.paid]="entry.status === 'paid'">
-                {{ entry.status | titlecase }}
-              </span>
-            </td>
-            <td class="actions">
-              <a [routerLink]="['/time-entries', entry.id, 'edit']" class="btn-action" *ngIf="entry.status === 'unbilled'">Edit</a>
-              <button class="btn-action btn-action-danger" (click)="confirmDelete(entry)" *ngIf="entry.status === 'unbilled'">Delete</button>
-              <span class="text-muted" *ngIf="entry.status !== 'unbilled'">Locked</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Delete confirmation modal -->
-      <div class="modal-overlay" *ngIf="entryToDelete" (click)="entryToDelete = null">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Delete Time Entry</h3>
-          <p>Are you sure you want to delete the time entry for <strong>{{ formatDate(entryToDelete.date) }}</strong> ({{ entryToDelete.durationHours }} hrs)?</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="entryToDelete = null">Cancel</button>
-            <button class="btn-danger" (click)="deleteEntry()">Delete</button>
+    
+      @if (!loading && filteredEntries.length > 0) {
+        <div class="summary-bar">
+          <div class="summary-item">
+            <span class="summary-label">Entries</span>
+            <span class="summary-value">{{ filteredEntries.length }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Total Hours</span>
+            <span class="summary-value">{{ totalHours }}</span>
+          </div>
+          <div class="summary-item unbilled">
+            <span class="summary-label">Unbilled</span>
+            <span class="summary-value">{{ unbilledHours }} hrs</span>
           </div>
         </div>
-      </div>
+      }
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading time entries...</p>
+        </div>
+      }
+    
+      @if (!loading && filteredEntries.length === 0) {
+        <div class="empty-state">
+          <h3>No time entries found</h3>
+          @if (dateFrom || dateTo || customerFilter || statusFilter) {
+            <p>Try adjusting your filters</p>
+          }
+          @if (!dateFrom && !dateTo && !customerFilter && !statusFilter) {
+            <p>Start logging your billable hours</p>
+          }
+          @if (!dateFrom && !dateTo && !customerFilter && !statusFilter) {
+            <a routerLink="/time-entries/new" class="btn-primary">+ Log Time</a>
+          }
+        </div>
+      }
+    
+      @if (!loading && filteredEntries.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="sortable" (click)="sortBy('date')">Date <span class="sort-icon">{{ getSortIcon('date') }}</span></th>
+              <th class="sortable" (click)="sortBy('startTime')">Time <span class="sort-icon">{{ getSortIcon('startTime') }}</span></th>
+              <th class="sortable" (click)="sortBy('durationHours')">Hours <span class="sort-icon">{{ getSortIcon('durationHours') }}</span></th>
+              <th class="sortable" (click)="sortBy('customer')">Customer <span class="sort-icon">{{ getSortIcon('customer') }}</span></th>
+              <th class="sortable" (click)="sortBy('project')">Project <span class="sort-icon">{{ getSortIcon('project') }}</span></th>
+              <th>Description</th>
+              <th class="sortable" (click)="sortBy('status')">Status <span class="sort-icon">{{ getSortIcon('status') }}</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of filteredEntries; track entry) {
+              <tr>
+                <td class="date-cell">{{ formatDate(entry.date) }}</td>
+                <td class="time-cell">{{ formatTime(entry.startTime) }} - {{ formatTime(entry.endTime) }}</td>
+                <td class="hours-cell">{{ entry.durationHours }}</td>
+                <td>{{ getCustomerName(entry.customerId) }}</td>
+                <td>{{ getProjectName(entry.projectId) }}</td>
+                <td class="desc-cell">
+                  @if (entry.description) {
+                    <span>{{ entry.description }}</span>
+                  }
+                  @if (!entry.description) {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  <span class="status-badge"
+                    [class.unbilled]="entry.status === 'unbilled'"
+                    [class.billed]="entry.status === 'billed'"
+                    [class.paid]="entry.status === 'paid'">
+                    {{ entry.status | titlecase }}
+                  </span>
+                </td>
+                <td class="actions">
+                  @if (entry.status === 'unbilled') {
+                    <a [routerLink]="['/time-entries', entry.id, 'edit']" class="btn-action">Edit</a>
+                  }
+                  @if (entry.status === 'unbilled') {
+                    <button class="btn-action btn-action-danger" (click)="confirmDelete(entry)">Delete</button>
+                  }
+                  @if (entry.status !== 'unbilled') {
+                    <span class="text-muted">Locked</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    
+      <!-- Delete confirmation modal -->
+      @if (entryToDelete) {
+        <div class="modal-overlay" (click)="entryToDelete = null">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3>Delete Time Entry</h3>
+            <p>Are you sure you want to delete the time entry for <strong>{{ formatDate(entryToDelete.date) }}</strong> ({{ entryToDelete.durationHours }} hrs)?</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="entryToDelete = null">Cancel</button>
+              <button class="btn-danger" (click)="deleteEntry()">Delete</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

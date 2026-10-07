@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CustomerService } from '../../services/customer.service';
@@ -10,7 +10,7 @@ import { Project } from '../../models/project.model';
 
 @Component({
     selector: 'app-customer-list',
-    imports: [CommonModule, RouterLink, FormsModule],
+    imports: [RouterLink, FormsModule],
     template: `
     <div class="page-container">
       <div class="page-header">
@@ -20,7 +20,7 @@ import { Project } from '../../models/project.model';
         </div>
         <a routerLink="/customers/new" class="btn-primary">+ New Customer</a>
       </div>
-
+    
       <div class="search-bar">
         <input
           type="text"
@@ -28,171 +28,207 @@ import { Project } from '../../models/project.model';
           placeholder="Search customers..."
           [(ngModel)]="searchTerm"
           (ngModelChange)="filterCustomers()"
-        >
+          >
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading customers...</p>
-      </div>
-
-      <div class="empty-state" *ngIf="!loading && filteredCustomers.length === 0">
-        <h3>No customers found</h3>
-        <p *ngIf="searchTerm">Try adjusting your search term</p>
-        <p *ngIf="!searchTerm">Get started by adding your first customer</p>
-        <a routerLink="/customers/new" class="btn-primary" *ngIf="!searchTerm">+ Add Customer</a>
-      </div>
-
-      <table class="data-table" *ngIf="!loading && filteredCustomers.length > 0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Company</th>
-            <th>Billable Contact</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Rate</th>
-            <th>Unbilled Hrs</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let customer of filteredCustomers">
-            <td class="customer-id">{{ customer.customerId }}</td>
-            <td class="company-name">{{ customer.companyName }}</td>
-            <td>{{ customer.billablePersonName }}</td>
-            <td>
-              <a *ngIf="customer.email" [href]="'mailto:' + customer.email">{{ customer.email }}</a>
-              <span class="text-muted" *ngIf="!customer.email">—</span>
-            </td>
-            <td>
-              <span *ngIf="customer.phone">{{ customer.phone }}</span>
-              <span class="text-muted" *ngIf="!customer.phone">—</span>
-            </td>
-            <td>
-              <span *ngIf="customer.hourlyRate">\${{ customer.hourlyRate }}/hr</span>
-              <span class="text-muted" *ngIf="!customer.hourlyRate">—</span>
-            </td>
-            <td class="unbilled-cell">
-              <span *ngIf="getUnbilledHours(customer.id) > 0" class="unbilled-hours">{{ getUnbilledHours(customer.id) }}</span>
-              <span class="text-muted" *ngIf="getUnbilledHours(customer.id) === 0">—</span>
-            </td>
-            <td>
-              <span class="status-badge" [class.active]="customer.isActive" [class.inactive]="!customer.isActive">
-                {{ customer.isActive ? 'Active' : 'Inactive' }}
-              </span>
-            </td>
-            <td class="actions">
-              <button class="btn-action" (click)="openPreview(customer)">Preview Invoice</button>
-              <a [routerLink]="['/customers', customer.id, 'edit']" class="btn-action">Edit</a>
-              <button class="btn-action btn-action-danger" (click)="confirmDelete(customer)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading customers...</p>
+        </div>
+      }
+    
+      @if (!loading && filteredCustomers.length === 0) {
+        <div class="empty-state">
+          <h3>No customers found</h3>
+          @if (searchTerm) {
+            <p>Try adjusting your search term</p>
+          }
+          @if (!searchTerm) {
+            <p>Get started by adding your first customer</p>
+          }
+          @if (!searchTerm) {
+            <a routerLink="/customers/new" class="btn-primary">+ Add Customer</a>
+          }
+        </div>
+      }
+    
+      @if (!loading && filteredCustomers.length > 0) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Company</th>
+              <th>Billable Contact</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Rate</th>
+              <th>Unbilled Hrs</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (customer of filteredCustomers; track customer) {
+              <tr>
+                <td class="customer-id">{{ customer.customerId }}</td>
+                <td class="company-name">{{ customer.companyName }}</td>
+                <td>{{ customer.billablePersonName }}</td>
+                <td>
+                  @if (customer.email) {
+                    <a [href]="'mailto:' + customer.email">{{ customer.email }}</a>
+                  }
+                  @if (!customer.email) {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (customer.phone) {
+                    <span>{{ customer.phone }}</span>
+                  }
+                  @if (!customer.phone) {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (customer.hourlyRate) {
+                    <span>\${{ customer.hourlyRate }}/hr</span>
+                  }
+                  @if (!customer.hourlyRate) {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td class="unbilled-cell">
+                  @if (getUnbilledHours(customer.id) > 0) {
+                    <span class="unbilled-hours">{{ getUnbilledHours(customer.id) }}</span>
+                  }
+                  @if (getUnbilledHours(customer.id) === 0) {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  <span class="status-badge" [class.active]="customer.isActive" [class.inactive]="!customer.isActive">
+                    {{ customer.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="actions">
+                  <button class="btn-action" (click)="openPreview(customer)">Preview Invoice</button>
+                  <a [routerLink]="['/customers', customer.id, 'edit']" class="btn-action">Edit</a>
+                  <button class="btn-action btn-action-danger" (click)="confirmDelete(customer)">Delete</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    
       <!-- Invoice Preview Modal -->
-      <div class="modal-overlay" *ngIf="previewCustomer" (click)="closePreview()">
-        <div class="modal-content modal-content-wide" (click)="$event.stopPropagation()">
-          <div class="modal-top-bar">
-            <h3>Invoice Preview — {{ previewCustomer.companyName }}</h3>
-            <button class="modal-close" (click)="closePreview()">&#x2715;</button>
-          </div>
-
-          <div class="modal-scroll-body">
-            <div class="loading-state" *ngIf="previewLoading">
-              <div class="loading-spinner"></div>
-              <p>Loading unbilled entries...</p>
+      @if (previewCustomer) {
+        <div class="modal-overlay" (click)="closePreview()">
+          <div class="modal-content modal-content-wide" (click)="$event.stopPropagation()">
+            <div class="modal-top-bar">
+              <h3>Invoice Preview — {{ previewCustomer.companyName }}</h3>
+              <button class="modal-close" (click)="closePreview()">&#x2715;</button>
             </div>
-
-            <div *ngIf="!previewLoading && previewLineItems.length === 0" class="no-unbilled">
-              <p>No unbilled time entries for {{ previewCustomer.companyName }}.</p>
-            </div>
-
-            <div *ngIf="!previewLoading && previewLineItems.length > 0">
-              <!-- Invoice card: identical layout to invoice-detail -->
-              <div class="invoice-card">
-                <div class="invoice-header">
-                  <div class="invoice-from">
-                    <img src="assets/nta-logo.jpg" alt="NTA Logo" class="invoice-logo">
-                    <p>Notarangelo Technical Advisory</p>
+            <div class="modal-scroll-body">
+              @if (previewLoading) {
+                <div class="loading-state">
+                  <div class="loading-spinner"></div>
+                  <p>Loading unbilled entries...</p>
+                </div>
+              }
+              @if (!previewLoading && previewLineItems.length === 0) {
+                <div class="no-unbilled">
+                  <p>No unbilled time entries for {{ previewCustomer.companyName }}.</p>
+                </div>
+              }
+              @if (!previewLoading && previewLineItems.length > 0) {
+                <div>
+                  <!-- Invoice card: identical layout to invoice-detail -->
+                  <div class="invoice-card">
+                    <div class="invoice-header">
+                      <div class="invoice-from">
+                        <img src="assets/nta-logo.jpg" alt="NTA Logo" class="invoice-logo">
+                        <p>Notarangelo Technical Advisory</p>
+                      </div>
+                      <div class="invoice-to">
+                        <h4>Bill To</h4>
+                        <p class="customer-name">{{ previewCustomer.companyName }}</p>
+                      </div>
+                    </div>
+                    <div class="invoice-meta">
+                      <div class="meta-item">
+                        <span class="meta-label">Invoice #</span>
+                        <span class="meta-value meta-pending">Auto-generated</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Issue Date</span>
+                        <span class="meta-value">{{ previewIssueDate }}</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">Due Date</span>
+                        <span class="meta-value">{{ previewDueDate }}</span>
+                      </div>
+                    </div>
+                    <table class="line-items-table">
+                      <thead>
+                        <tr>
+                          <th>Project</th>
+                          <th>Description</th>
+                          <th>Hours</th>
+                          <th>Rate</th>
+                          <th class="text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (line of previewLineItems; track line) {
+                          <tr>
+                            <td>{{ line.projectName }}</td>
+                            <td class="desc-cell">{{ line.description || '—' }}</td>
+                            <td>{{ line.hours }}</td>
+                            <td>\${{ line.rate.toFixed(2) }}/hr</td>
+                            <td class="text-right">\${{ line.amount.toFixed(2) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                      <tfoot>
+                        <tr class="subtotal-row">
+                          <td colspan="4">Subtotal</td>
+                          <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
+                        </tr>
+                        <tr class="total-row">
+                          <td colspan="4">Total</td>
+                          <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
-                  <div class="invoice-to">
-                    <h4>Bill To</h4>
-                    <p class="customer-name">{{ previewCustomer.companyName }}</p>
+                  <div class="modal-actions">
+                    <button class="btn-secondary" (click)="closePreview()">Close</button>
+                    <a [routerLink]="['/invoices/generate']" class="btn-primary" (click)="closePreview()">Generate Invoice</a>
                   </div>
                 </div>
-
-                <div class="invoice-meta">
-                  <div class="meta-item">
-                    <span class="meta-label">Invoice #</span>
-                    <span class="meta-value meta-pending">Auto-generated</span>
-                  </div>
-                  <div class="meta-item">
-                    <span class="meta-label">Issue Date</span>
-                    <span class="meta-value">{{ previewIssueDate }}</span>
-                  </div>
-                  <div class="meta-item">
-                    <span class="meta-label">Due Date</span>
-                    <span class="meta-value">{{ previewDueDate }}</span>
-                  </div>
-                </div>
-
-                <table class="line-items-table">
-                  <thead>
-                    <tr>
-                      <th>Project</th>
-                      <th>Description</th>
-                      <th>Hours</th>
-                      <th>Rate</th>
-                      <th class="text-right">Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let line of previewLineItems">
-                      <td>{{ line.projectName }}</td>
-                      <td class="desc-cell">{{ line.description || '—' }}</td>
-                      <td>{{ line.hours }}</td>
-                      <td>\${{ line.rate.toFixed(2) }}/hr</td>
-                      <td class="text-right">\${{ line.amount.toFixed(2) }}</td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr class="subtotal-row">
-                      <td colspan="4">Subtotal</td>
-                      <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
-                    </tr>
-                    <tr class="total-row">
-                      <td colspan="4">Total</td>
-                      <td class="text-right">\${{ previewTotal.toFixed(2) }}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              <div class="modal-actions">
-                <button class="btn-secondary" (click)="closePreview()">Close</button>
-                <a [routerLink]="['/invoices/generate']" class="btn-primary" (click)="closePreview()">Generate Invoice</a>
-              </div>
+              }
             </div>
           </div>
         </div>
-      </div>
-
+      }
+    
       <!-- Delete confirmation modal -->
-      <div class="modal-overlay" *ngIf="customerToDelete" (click)="customerToDelete = null">
-        <div class="modal-content" (click)="$event.stopPropagation()">
-          <h3>Delete Customer</h3>
-          <p>Are you sure you want to delete <strong>{{ customerToDelete.companyName }}</strong>? This action cannot be undone.</p>
-          <div class="modal-actions">
-            <button class="btn-secondary" (click)="customerToDelete = null">Cancel</button>
-            <button class="btn-danger" (click)="deleteCustomer()">Delete</button>
+      @if (customerToDelete) {
+        <div class="modal-overlay" (click)="customerToDelete = null">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <h3>Delete Customer</h3>
+            <p>Are you sure you want to delete <strong>{{ customerToDelete.companyName }}</strong>? This action cannot be undone.</p>
+            <div class="modal-actions">
+              <button class="btn-secondary" (click)="customerToDelete = null">Cancel</button>
+              <button class="btn-danger" (click)="deleteCustomer()">Delete</button>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';

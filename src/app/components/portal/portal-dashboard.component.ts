@@ -19,129 +19,147 @@ import { Project } from '../../models/project.model';
       <div class="page-header">
         <h1>My Dashboard</h1>
       </div>
-
-      <div class="loading-state" *ngIf="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading your data...</p>
-      </div>
-
-      <div *ngIf="!loading">
-        <!-- Summary Cards -->
-        <div class="summary-cards">
-          <div class="summary-card">
-            <span class="card-label">Unbilled Hours</span>
-            <span class="card-value warning">{{ unbilledHours }}</span>
+    
+      @if (loading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading your data...</p>
+        </div>
+      }
+    
+      @if (!loading) {
+        <div>
+          <!-- Summary Cards -->
+          <div class="summary-cards">
+            <div class="summary-card">
+              <span class="card-label">Unbilled Hours</span>
+              <span class="card-value warning">{{ unbilledHours }}</span>
+            </div>
+            <div class="summary-card estimate-card">
+              <span class="card-label">Est. Next Invoice</span>
+              <span class="card-value danger">\${{ estimatedInvoice.toFixed(2) }}</span>
+              <span class="card-subtitle">Based on {{ unbilledHours }} unbilled hrs</span>
+            </div>
+            <div class="summary-card">
+              <span class="card-label">Outstanding</span>
+              <span class="card-value primary">\${{ outstandingTotal.toFixed(2) }}</span>
+            </div>
+            <div class="summary-card">
+              <span class="card-label">Total Paid</span>
+              <span class="card-value success">\${{ paidTotal.toFixed(2) }}</span>
+            </div>
           </div>
-          <div class="summary-card estimate-card">
-            <span class="card-label">Est. Next Invoice</span>
-            <span class="card-value danger">\${{ estimatedInvoice.toFixed(2) }}</span>
-            <span class="card-subtitle">Based on {{ unbilledHours }} unbilled hrs</span>
+          <!-- Time Entries with Filters -->
+          <div class="section">
+            <div class="section-header">
+              <h2>Time Entries</h2>
+            </div>
+            <div class="filters">
+              <div class="filter-group">
+                <label>From</label>
+                <input type="date" class="filter-input" [(ngModel)]="filterStartDate" (ngModelChange)="applyFilters()">
+              </div>
+              <div class="filter-group">
+                <label>To</label>
+                <input type="date" class="filter-input" [(ngModel)]="filterEndDate" (ngModelChange)="applyFilters()">
+              </div>
+              <div class="filter-group">
+                <label>Status</label>
+                <select class="filter-input" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
+                  <option value="">All</option>
+                  <option value="unbilled">Unbilled</option>
+                  <option value="billed">Billed</option>
+                  <option value="paid">Paid</option>
+                </select>
+              </div>
+              @if (filterStartDate || filterEndDate || filterStatus) {
+                <button class="btn-clear" (click)="clearFilters()">Clear</button>
+              }
+            </div>
+            @if (filteredEntries.length === 0) {
+              <div class="empty-hint">
+                <p>No time entries found.</p>
+              </div>
+            }
+            @if (filteredEntries.length > 0) {
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Hours</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (entry of displayedEntries; track entry) {
+                    <tr>
+                      <td class="date-cell">{{ formatDate(entry.date) }}</td>
+                      <td class="hours-cell">{{ entry.durationHours }}</td>
+                      <td>{{ entry.description || '—' }}</td>
+                      <td>
+                        <span class="status-badge" [ngClass]="entry.status">
+                          {{ entry.status | titlecase }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+            @if (filteredEntries.length > displayLimit) {
+              <div class="show-more">
+                <button class="btn-show-more" (click)="showMore()">
+                  Show more ({{ filteredEntries.length - displayLimit }} remaining)
+                </button>
+              </div>
+            }
           </div>
-          <div class="summary-card">
-            <span class="card-label">Outstanding</span>
-            <span class="card-value primary">\${{ outstandingTotal.toFixed(2) }}</span>
-          </div>
-          <div class="summary-card">
-            <span class="card-label">Total Paid</span>
-            <span class="card-value success">\${{ paidTotal.toFixed(2) }}</span>
+          <!-- Invoices -->
+          <div class="section">
+            <h2>Invoices</h2>
+            @if (invoices.length === 0) {
+              <div class="empty-hint">
+                <p>No invoices yet.</p>
+              </div>
+            }
+            @if (invoices.length > 0) {
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (invoice of invoices; track invoice) {
+                    <tr>
+                      <td class="invoice-number">{{ invoice.invoiceNumber }}</td>
+                      <td>{{ formatDate(invoice.issueDate) }}</td>
+                      <td>{{ formatDate(invoice.dueDate) }}</td>
+                      <td class="amount-cell">\${{ invoice.total.toFixed(2) }}</td>
+                      <td>
+                        <span class="status-badge" [ngClass]="invoice.status">
+                          {{ invoice.status | titlecase }}
+                        </span>
+                      </td>
+                      <td>
+                        <a [routerLink]="['/portal/invoices', invoice.id]" class="btn-action">View</a>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
           </div>
         </div>
-
-        <!-- Time Entries with Filters -->
-        <div class="section">
-          <div class="section-header">
-            <h2>Time Entries</h2>
-          </div>
-          <div class="filters">
-            <div class="filter-group">
-              <label>From</label>
-              <input type="date" class="filter-input" [(ngModel)]="filterStartDate" (ngModelChange)="applyFilters()">
-            </div>
-            <div class="filter-group">
-              <label>To</label>
-              <input type="date" class="filter-input" [(ngModel)]="filterEndDate" (ngModelChange)="applyFilters()">
-            </div>
-            <div class="filter-group">
-              <label>Status</label>
-              <select class="filter-input" [(ngModel)]="filterStatus" (ngModelChange)="applyFilters()">
-                <option value="">All</option>
-                <option value="unbilled">Unbilled</option>
-                <option value="billed">Billed</option>
-                <option value="paid">Paid</option>
-              </select>
-            </div>
-            <button class="btn-clear" *ngIf="filterStartDate || filterEndDate || filterStatus" (click)="clearFilters()">Clear</button>
-          </div>
-          <div class="empty-hint" *ngIf="filteredEntries.length === 0">
-            <p>No time entries found.</p>
-          </div>
-          <table class="data-table" *ngIf="filteredEntries.length > 0">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Hours</th>
-                <th>Description</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let entry of displayedEntries">
-                <td class="date-cell">{{ formatDate(entry.date) }}</td>
-                <td class="hours-cell">{{ entry.durationHours }}</td>
-                <td>{{ entry.description || '—' }}</td>
-                <td>
-                  <span class="status-badge" [ngClass]="entry.status">
-                    {{ entry.status | titlecase }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="show-more" *ngIf="filteredEntries.length > displayLimit">
-            <button class="btn-show-more" (click)="showMore()">
-              Show more ({{ filteredEntries.length - displayLimit }} remaining)
-            </button>
-          </div>
-        </div>
-
-        <!-- Invoices -->
-        <div class="section">
-          <h2>Invoices</h2>
-          <div class="empty-hint" *ngIf="invoices.length === 0">
-            <p>No invoices yet.</p>
-          </div>
-          <table class="data-table" *ngIf="invoices.length > 0">
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Issue Date</th>
-                <th>Due Date</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let invoice of invoices">
-                <td class="invoice-number">{{ invoice.invoiceNumber }}</td>
-                <td>{{ formatDate(invoice.issueDate) }}</td>
-                <td>{{ formatDate(invoice.dueDate) }}</td>
-                <td class="amount-cell">\${{ invoice.total.toFixed(2) }}</td>
-                <td>
-                  <span class="status-badge" [ngClass]="invoice.status">
-                    {{ invoice.status | titlecase }}
-                  </span>
-                </td>
-                <td>
-                  <a [routerLink]="['/portal/invoices', invoice.id]" class="btn-action">View</a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      }
     </div>
-  `,
+    `,
     styles: [`
     @import '../../../styles/tokens';
     @import '../../../styles/mixins';
