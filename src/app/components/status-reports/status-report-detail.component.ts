@@ -1,4 +1,6 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
@@ -403,6 +405,7 @@ export class StatusReportDetailComponent implements OnInit {
   private timeEntryService = inject(TimeEntryService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   report: StatusReport | null = null;
   loading = true;
@@ -417,19 +420,24 @@ export class StatusReportDetailComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) return;
 
-    this.statusReportService.getStatusReport(id).subscribe(report => {
-      this.report = report;
-      this.loading = false;
-      this.timeEntryService.getTimeEntriesByCustomer(report.customerId).subscribe(entries => {
-        if (!entries.length) return;
-        const dates = entries.map(e => e.date).sort();
-        const inceptionDate = new Date(dates[0] + 'T00:00:00');
-        const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-        const weeksElapsed = Math.floor((new Date().getTime() - inceptionDate.getTime()) / msPerWeek);
-        if (weeksElapsed < 1) return;
-        const totalHours = entries.reduce((s, e) => s + e.durationHours, 0);
-        this.avgHoursPerWeek = Math.round((totalHours / weeksElapsed) * 10) / 10;
-      });
+    // One chain, stopped when the page closes. The report re-emits after every
+    // inline edit; switchMap keeps a single time-entries listener open.
+    this.statusReportService.getStatusReport(id).pipe(
+      tap(report => {
+        this.report = report;
+        this.loading = false;
+      }),
+      switchMap(report => this.timeEntryService.getTimeEntriesByCustomer(report.customerId)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(entries => {
+      if (!entries.length) return;
+      const dates = entries.map(e => e.date).sort();
+      const inceptionDate = new Date(dates[0] + 'T00:00:00');
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const weeksElapsed = Math.floor((new Date().getTime() - inceptionDate.getTime()) / msPerWeek);
+      if (weeksElapsed < 1) return;
+      const totalHours = entries.reduce((s, e) => s + e.durationHours, 0);
+      this.avgHoursPerWeek = Math.round((totalHours / weeksElapsed) * 10) / 10;
     });
   }
 
