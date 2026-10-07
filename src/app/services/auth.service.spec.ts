@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { AuthService } from './auth.service';
+import { AuthService, NO_ACCESS_MESSAGE } from './auth.service';
 import {
   EmulatorApp, clearEmulators, createAccount, createEmulatorApp, provideEmulator, readDocument, rejectionOf, signInAs
 } from '../../testing/emulator-testing';
@@ -33,6 +33,16 @@ describe('AuthService', () => {
     await createAccount(emulator, 'brad@example.com', 'correct-horse', 'customer');
     await service.signIn('brad@example.com', 'correct-horse');
     expect(navigate).toHaveBeenCalledWith(['/portal']);
+  });
+
+  it('signs an account with no profile straight out again, and says why', async () => {
+    await createAccount(emulator, 'stranger@example.com', 'correct-horse', null);
+
+    const error = await rejectionOf(service.signIn('stranger@example.com', 'correct-horse'));
+
+    expect(error.message).toBe(NO_ACCESS_MESSAGE);
+    expect(emulator.auth.currentUser).toBeNull();
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('refuses a wrong password', async () => {

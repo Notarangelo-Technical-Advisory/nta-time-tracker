@@ -9,6 +9,9 @@ import { USER_PROFILES } from './firestore-collections.const';
 import { UserProfile } from '../models/user.model';
 import { AUTH, FIRESTORE } from '../firebase';
 
+export const NO_ACCESS_MESSAGE =
+  'This account does not have access yet. Please ask Notarangelo Technical Advisory for an invite link.';
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private auth = inject(AUTH);
@@ -20,6 +23,13 @@ export class AuthService {
   async signIn(email: string, password: string): Promise<void> {
     const credential = await signInWithEmailAndPassword(this.auth, email, password);
     const profile = await this.getUserProfile(credential.user.uid);
+
+    // An account without a profile can open nothing (see firestore.rules), so
+    // do not leave it signed in on a page it cannot use.
+    if (!profile) {
+      await signOut(this.auth);
+      throw new Error(NO_ACCESS_MESSAGE);
+    }
 
     await updateDoc(doc(this.firestore, USER_PROFILES, credential.user.uid), {
       lastLogin: new Date()

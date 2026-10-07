@@ -1,8 +1,9 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { signOut } from 'firebase/auth';
 import { authState } from 'rxfire/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { switchMap, take, map, of } from 'rxjs';
+import { switchMap, take, of } from 'rxjs';
 import { from } from 'rxjs';
 import { USER_PROFILES } from '../services/firestore-collections.const';
 import { AUTH, FIRESTORE } from '../firebase';
@@ -20,9 +21,16 @@ export const adminGuard: CanActivateFn = () => {
         return of(false);
       }
       return from(getDoc(doc(firestore, USER_PROFILES, user.uid))).pipe(
-        map(docSnap => {
+        switchMap(async docSnap => {
           if (docSnap.exists() && docSnap.data()['role'] === 'admin') {
             return true;
+          }
+          if (!docSnap.exists()) {
+            // No profile, so no access anywhere. Sending them to the other
+            // area would bounce straight back here, so sign them out instead.
+            await signOut(auth);
+            router.navigate(['/auth']);
+            return false;
           }
           router.navigate(['/portal']);
           return false;

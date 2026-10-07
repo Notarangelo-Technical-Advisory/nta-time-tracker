@@ -4,6 +4,7 @@ import { Observable, firstValueFrom, isObservable } from 'rxjs';
 import { authGuard, noAuthGuard } from './auth.guard';
 import { adminGuard } from './admin.guard';
 import { customerGuard } from './customer.guard';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { EmulatorApp, clearEmulators, createEmulatorApp, provideEmulator, signInAs } from '../../testing/emulator-testing';
 
 // The route guards against the Auth and Firestore emulators, with real
@@ -58,6 +59,20 @@ describe('Route guards', () => {
       navigate.calls.reset();
       expect(await run(noAuthGuard)).toBeFalse();
       expect(navigate).toHaveBeenCalledWith(['/dashboard']);
+    });
+  });
+
+  describe('for a signed-in account with no profile', () => {
+    it('signs them out and sends them to sign in, instead of bouncing between the two areas', async () => {
+      for (const guard of [adminGuard, customerGuard]) {
+        await createUserWithEmailAndPassword(emulator.auth, `stranger-${guard === adminGuard ? 'a' : 'c'}@example.com`, 'password123');
+        navigate.calls.reset();
+
+        expect(await run(guard)).toBeFalse();
+
+        expect(navigate.calls.allArgs()).toEqual([[['/auth']]]);
+        expect(emulator.auth.currentUser).toBeNull();
+      }
     });
   });
 
