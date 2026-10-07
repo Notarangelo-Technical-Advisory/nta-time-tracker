@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, query, orderBy, where, getDoc, getDocs } from '@angular/fire/firestore';
+import { collection, doc, addDoc, updateDoc, query, orderBy, where, getDoc, getDocs } from 'firebase/firestore';
+import { collectionData, docData } from 'rxfire/firestore';
 import { Observable } from 'rxjs';
 import { INVOICES } from './firestore-collections.const';
 import { Invoice, InvoiceLineItem } from '../models/invoice.model';
 import { TimeEntry } from '../models/time-entry.model';
 import { TimeEntryService } from './time-entry.service';
+import { FIRESTORE } from '../firebase';
 
 /** Why a single time entry can't be pulled back onto a reopening invoice. */
 export interface ReopenBlocker {
@@ -39,7 +41,7 @@ export type ReopenResult =
 
 @Injectable({ providedIn: 'root' })
 export class InvoiceService {
-  private firestore = inject(Firestore);
+  private firestore = inject(FIRESTORE);
   private timeEntryService = inject(TimeEntryService);
 
   getInvoices(): Observable<Invoice[]> {

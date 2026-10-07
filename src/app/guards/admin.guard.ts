@@ -1,14 +1,15 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Auth, authState } from '@angular/fire/auth';
-import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { authState } from 'rxfire/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { switchMap, take, map, of } from 'rxjs';
 import { from } from 'rxjs';
 import { USER_PROFILES } from '../services/firestore-collections.const';
+import { AUTH, FIRESTORE } from '../firebase';
 
 export const adminGuard: CanActivateFn = () => {
-  const auth = inject(Auth);
-  const firestore = inject(Firestore);
+  const auth = inject(AUTH);
+  const firestore = inject(FIRESTORE);
   const router = inject(Router);
 
   return authState(auth).pipe(

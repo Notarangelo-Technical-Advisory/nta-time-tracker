@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, query, orderBy, where, getDocs } from '@angular/fire/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, query, orderBy, where, getDocs } from 'firebase/firestore';
+import { collectionData, docData } from 'rxfire/firestore';
 import { Observable, map } from 'rxjs';
 import { CUSTOMERS } from './firestore-collections.const';
 import { Customer } from '../models/customer.model';
+import { FIRESTORE } from '../firebase';
 
 @Injectable({ providedIn: 'root' })
 export class CustomerService {
-  private firestore = inject(Firestore);
+  private firestore = inject(FIRESTORE);
 
   getCustomers(): Observable<Customer[]> {
     const ref = collection(this.firestore, CUSTOMERS);

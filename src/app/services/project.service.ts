@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, query, orderBy, where, getDocs } from '@angular/fire/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, query, orderBy, where, getDocs } from 'firebase/firestore';
+import { collectionData, docData } from 'rxfire/firestore';
 import { Observable } from 'rxjs';
 import { PROJECTS } from './firestore-collections.const';
 import { Project } from '../models/project.model';
+import { FIRESTORE } from '../firebase';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
-  private firestore = inject(Firestore);
+  private firestore = inject(FIRESTORE);
 
   getProjects(): Observable<Project[]> {
     const ref = collection(this.firestore, PROJECTS);

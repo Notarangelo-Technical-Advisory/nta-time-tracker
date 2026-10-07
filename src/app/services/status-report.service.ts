@@ -1,25 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  Firestore,
-  collection,
-  collectionData,
-  doc,
-  docData,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  getDocs,
-  where
-} from '@angular/fire/firestore';
-import { Functions, httpsCallable } from '@angular/fire/functions';
+import { collection, doc, addDoc, updateDoc, deleteDoc, query, orderBy, getDocs, where } from 'firebase/firestore';
+import { collectionData, docData } from 'rxfire/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { Observable } from 'rxjs';
 import { STATUS_REPORTS, OUTCOMES } from './firestore-collections.const';
 import { StatusReport, StatusReportSection } from '../models/status-report.model';
 import { OutcomeRecord } from '../models/outcome-record.model';
 import { TimeEntry } from '../models/time-entry.model';
 import { Project } from '../models/project.model';
+import { FIRESTORE, FUNCTIONS } from '../firebase';
 
 interface GenerateStatusReportRequest {
   customerName: string;
@@ -40,8 +29,8 @@ interface GenerateStatusReportResponse {
 
 @Injectable({ providedIn: 'root' })
 export class StatusReportService {
-  private firestore = inject(Firestore);
-  private functions = inject(Functions);
+  private firestore = inject(FIRESTORE);
+  private functions = inject(FUNCTIONS);
 
   getStatusReports(): Observable<StatusReport[]> {
     const ref = collection(this.firestore, STATUS_REPORTS);

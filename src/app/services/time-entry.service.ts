@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, docData, addDoc, updateDoc, deleteDoc, deleteField, query, orderBy, where, getDoc, writeBatch } from '@angular/fire/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, deleteField, query, orderBy, where, getDoc, writeBatch } from 'firebase/firestore';
+import { collectionData, docData } from 'rxfire/firestore';
 import { Observable } from 'rxjs';
 import { TIME_ENTRIES } from './firestore-collections.const';
 import { TimeEntry } from '../models/time-entry.model';
+import { FIRESTORE } from '../firebase';
 
 @Injectable({ providedIn: 'root' })
 export class TimeEntryService {
-  private firestore = inject(Firestore);
+  private firestore = inject(FIRESTORE);
 
   getTimeEntries(): Observable<TimeEntry[]> {
     const ref = collection(this.firestore, TIME_ENTRIES);

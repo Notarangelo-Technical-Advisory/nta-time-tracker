@@ -2,12 +2,13 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { createUserWithEmailAndPassword, Auth } from '@angular/fire/auth';
-import { Firestore, doc, setDoc } from '@angular/fire/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { InviteService } from '../../services/invite.service';
 import { Invite } from '../../models/invite.model';
 import { UserProfile } from '../../models/user.model';
 import { USER_PROFILES } from '../../services/firestore-collections.const';
+import { AUTH, FIRESTORE } from '../../firebase';
 
 @Component({
     selector: 'app-invite-signup',
@@ -192,8 +193,8 @@ import { USER_PROFILES } from '../../services/firestore-collections.const';
 export class InviteSignupComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private auth = inject(Auth);
-  private firestore = inject(Firestore);
+  private auth = inject(AUTH);
+  private firestore = inject(FIRESTORE);
   private inviteService = inject(InviteService);
 
   invite: Invite | null = null;

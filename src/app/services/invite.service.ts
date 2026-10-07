@@ -1,14 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, addDoc, updateDoc, query, orderBy, where, getDocs } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
+import { collection, doc, addDoc, updateDoc, query, orderBy, where, getDocs } from 'firebase/firestore';
+import { collectionData } from 'rxfire/firestore';
 import { Observable } from 'rxjs';
 import { INVITES } from './firestore-collections.const';
 import { Invite } from '../models/invite.model';
+import { AUTH, FIRESTORE } from '../firebase';
 
 @Injectable({ providedIn: 'root' })
 export class InviteService {
-  private firestore = inject(Firestore);
-  private auth = inject(Auth);
+  private firestore = inject(FIRESTORE);
+  private auth = inject(AUTH);
 
   getInvites(): Observable<Invite[]> {
     const ref = collection(this.firestore, INVITES);

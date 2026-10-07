@@ -1,10 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Auth, authState } from '@angular/fire/auth';
+import { authState } from 'rxfire/auth';
 import { map, take } from 'rxjs/operators';
+import { AUTH } from '../firebase';
 
 export const authGuard: CanActivateFn = () => {
-  const auth = inject(Auth);
+  const auth = inject(AUTH);
   const router = inject(Router);
 
   return authState(auth).pipe(
@@ -18,7 +19,7 @@ export const authGuard: CanActivateFn = () => {
 };
 
 export const noAuthGuard: CanActivateFn = () => {
-  const auth = inject(Auth);
+  const auth = inject(AUTH);
   const router = inject(Router);
 
   return authState(auth).pipe(

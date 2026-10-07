@@ -1,16 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, authState, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, User } from '@angular/fire/auth';
-import { Firestore, doc, setDoc, getDoc, updateDoc } from '@angular/fire/firestore';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail, User } from 'firebase/auth';
+import { authState } from 'rxfire/auth';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { Router } from '@angular/router';
 import { Observable, firstValueFrom } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { USER_PROFILES } from './firestore-collections.const';
 import { UserProfile } from '../models/user.model';
+import { AUTH, FIRESTORE } from '../firebase';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private auth = inject(Auth);
-  private firestore = inject(Firestore);
+  private auth = inject(AUTH);
+  private firestore = inject(FIRESTORE);
   private router = inject(Router);
 
   user$: Observable<User | null> = authState(this.auth);

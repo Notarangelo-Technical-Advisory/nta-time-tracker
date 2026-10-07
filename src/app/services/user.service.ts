@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { Firestore, collection, collectionData, doc, updateDoc, deleteDoc, query, orderBy } from '@angular/fire/firestore';
+import { collection, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collectionData } from 'rxfire/firestore';
 import { Observable } from 'rxjs';
 import { USER_PROFILES } from './firestore-collections.const';
 import { UserProfile } from '../models/user.model';
+import { FIRESTORE } from '../firebase';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private firestore = inject(Firestore);
+  private firestore = inject(FIRESTORE);
 
   getUsers(): Observable<UserProfile[]> {
     const ref = collection(this.firestore, USER_PROFILES);

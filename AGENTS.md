@@ -84,6 +84,13 @@ gcloud auth application-default set-quota-project fta-invoice-tracking
 - CI/CD pipeline: `.github/workflows/deploy-and-release.yml` triggers on push to main.
 - The pipeline auto-versions (semver), builds, deploys to Firebase (hosting + firestore), generates AI release notes, and creates a GitHub Release.
 
+## Testing
+
+Every code change ships with automated tests. `npm run test:ci` runs the browser tests on the Firebase
+Auth and Firestore emulators (project `demo-nta-browser`), with real accounts and the real
+`firestore.rules`. The deploy workflow runs it first, so a failing test stops the deploy. Helpers for
+signing in as an admin or a customer and for seeding documents are in `src/testing/emulator-testing.ts`.
+
 ## Domain Invariants
 
 ### Status Reports — zero-activity sections are orphans

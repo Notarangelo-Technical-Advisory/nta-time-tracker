@@ -16,7 +16,10 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Run `npm test` to execute the browser tests via [Karma](https://karma-runner.github.io), or `npm run test:ci` for a
+single headless run. Both start the Firebase Auth and Firestore emulators first (Java must be installed),
+so the tests use real sign-in and the real security rules, and never touch live data. CI runs `test:ci`
+before every deploy.
 
 ## Running end-to-end tests
 
