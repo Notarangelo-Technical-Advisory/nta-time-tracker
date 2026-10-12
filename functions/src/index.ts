@@ -132,7 +132,7 @@ For each project listed above, generate:
           'content-type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-5',
+          model: 'claude-haiku-5-5',
           // Raised from 4096 so adaptive-thinking tokens don't crowd out the
           // JSON output and truncate it.
           max_tokens: 8192,
