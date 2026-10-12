@@ -66,6 +66,7 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
               }
             </div>
           </div>
+          <p class="edit-hint">Click any line to edit it. Changes save automatically. Export when you are happy with the report.</p>
           <!-- AI-generated sections. Skip any section with no activities: those
           are orphaned carried-forward outcome records (e.g. from a project
           rename) that redundantly duplicate an active section's outcomes.
@@ -239,6 +240,12 @@ import { StatusReport, StatusReportSection } from '../../models/status-report.mo
       width: fit-content;
       &.draft { background: $color-gray-100; color: $color-text-muted; }
       &.sent  { background: $color-success-light; color: $color-success-text; }
+    }
+
+    .edit-hint {
+      margin: 0 0 $spacing-base 0;
+      color: $color-text-muted;
+      font-size: $font-size-sm;
     }
 
     /* Sections */

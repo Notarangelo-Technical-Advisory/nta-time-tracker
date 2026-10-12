@@ -11,8 +11,6 @@ import { InvoiceService } from '../../services/invoice.service';
 import { TimeEntry } from '../../models/time-entry.model';
 import { Customer } from '../../models/customer.model';
 import { Project } from '../../models/project.model';
-import { StatusReportSection } from '../../models/status-report.model';
-import { OutcomeRecord } from '../../models/outcome-record.model';
 
 @Component({
   selector: 'app-status-report-generate',
@@ -31,14 +29,9 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
           <span class="step-label">Select Customer</span>
         </div>
         <div class="step-connector" [class.active]="currentStep > 1"></div>
-        <div class="step" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">
+        <div class="step" [class.active]="currentStep === 2">
           <span class="step-number">2</span>
-          <span class="step-label">Select Entries</span>
-        </div>
-        <div class="step-connector" [class.active]="currentStep > 2"></div>
-        <div class="step" [class.active]="currentStep === 3">
-          <span class="step-number">3</span>
-          <span class="step-label">Review &amp; Generate</span>
+          <span class="step-label">Select Entries &amp; Generate</span>
         </div>
       </div>
     
@@ -75,20 +68,27 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
         <div class="step-content">
           <div class="form-card">
             <h2>Time Entries for {{ selectedCustomer?.companyName }}</h2>
-            <p class="step-desc">Select the entries to include. All billing statuses are shown.</p>
-            @if (loadingEntries) {
+            <p class="step-desc">Select the entries to include, then generate the report. You can edit it as soon as it is ready. All billing statuses are shown.</p>
+            @if (generating) {
+              <div class="generating-state">
+                <div class="loading-spinner large"></div>
+                <h2>Generating Report...</h2>
+                <p>Claude is analyzing {{ selectedEntries.length }} time entries and writing your status report.</p>
+              </div>
+            }
+            @if (!generating && loadingEntries) {
               <div class="loading-state">
                 <div class="loading-spinner"></div>
                 <p>Loading entries...</p>
               </div>
             }
-            @if (!loadingEntries && allEntries.length === 0) {
+            @if (!generating && !loadingEntries && allEntries.length === 0) {
               <div class="empty-state">
                 <p>No time entries found for this customer.</p>
                 <button class="btn-secondary" (click)="currentStep = 1">Back</button>
               </div>
             }
-            @if (!loadingEntries && allEntries.length > 0) {
+            @if (!generating && !loadingEntries && allEntries.length > 0) {
               <div>
                 <!-- Date range filter -->
                 <div class="date-filters">
@@ -141,10 +141,15 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
                     <span>{{ selectedEntries.length }} entries selected ({{ selectedHours }} hours)</span>
                   </div>
                 }
+                @if (error) {
+                  <div class="error-message">
+                    <p>{{ error }}</p>
+                  </div>
+                }
                 <div class="step-actions">
                   <button class="btn-secondary" (click)="currentStep = 1">Back</button>
-                  <button class="btn-primary" [disabled]="selectedEntries.length === 0" (click)="goToStep3()">
-                    Next: Review &amp; Generate
+                  <button class="btn-primary" [disabled]="selectedEntries.length === 0" (click)="generateReport()">
+                    Generate Report with AI
                   </button>
                 </div>
               </div>
@@ -153,140 +158,6 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
         </div>
       }
     
-      <!-- ─── Step 3: Review & Generate ─── -->
-      @if (currentStep === 3) {
-        <div class="step-content">
-          <div class="form-card">
-            <!-- Phase: preview (before generation) -->
-            @if (phase === 'preview') {
-              <h2>Ready to Generate</h2>
-              <div class="report-meta">
-                <div class="meta-item">
-                  <span class="meta-label">Customer</span>
-                  <span class="meta-value">{{ selectedCustomer?.companyName }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-label">Period</span>
-                  <span class="meta-value">{{ formatDate(periodStart) }} – {{ formatDate(periodEnd) }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-label">Entries</span>
-                  <span class="meta-value">{{ selectedEntries.length }}</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-label">Total Hours</span>
-                  <span class="meta-value">{{ selectedHours }}</span>
-                </div>
-                @if (avgHoursPerWeek !== null) {
-                  <div class="meta-item">
-                    <span class="meta-label">Avg Hrs/Week (Since Inception)</span>
-                    <span class="meta-value">{{ avgHoursPerWeek }} hrs/wk</span>
-                  </div>
-                }
-              </div>
-              <table class="data-table preview-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Project</th>
-                    <th>Description</th>
-                    <th>Hours</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (entry of selectedEntries; track entry) {
-                    <tr>
-                      <td class="date-cell">{{ formatDate(entry.date) }}</td>
-                      <td>{{ getProjectName(entry.projectId) }}</td>
-                      <td class="desc-cell">{{ entry.description || '—' }}</td>
-                      <td class="hours-cell">{{ entry.durationHours }}</td>
-                      <td><span class="status-badge" [ngClass]="entry.status">{{ entry.status | titlecase }}</span></td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-              @if (error) {
-                <div class="error-message">
-                  <p>{{ error }}</p>
-                </div>
-              }
-              <div class="step-actions">
-                <button class="btn-secondary" (click)="currentStep = 2">Back</button>
-                <button class="btn-primary" (click)="generateReport()">
-                  Generate Report with AI
-                </button>
-              </div>
-            }
-            <!-- Phase: generating (spinner) -->
-            @if (phase === 'generating') {
-              <div class="generating-state">
-                <div class="loading-spinner large"></div>
-                <h2>Generating Report...</h2>
-                <p>Claude is analyzing {{ selectedEntries.length }} time entries and writing your status report.</p>
-              </div>
-            }
-            <!-- Phase: result (show AI output) -->
-            @if (phase === 'result') {
-              <div class="result-header">
-                <h2>Status Report Preview</h2>
-                <div class="result-meta">
-                  <span>{{ selectedCustomer?.companyName }}</span>
-                  <span class="meta-sep">·</span>
-                  <span>{{ formatDate(periodStart) }} – {{ formatDate(periodEnd) }}</span>
-                </div>
-              </div>
-              <div class="sections-list">
-                @for (section of generatedSections; track section) {
-                  <div class="report-section">
-                    <h3 class="project-name">{{ section.projectName }}</h3>
-                    <div class="section-block">
-                      <h4 class="block-label">Activities</h4>
-                      <ul class="bullet-list">
-                        @for (item of section.activities; track item) {
-                          <li>{{ item }}</li>
-                        }
-                      </ul>
-                    </div>
-                    <div class="section-block">
-                      <h4 class="block-label">Outcomes</h4>
-                      <ul class="bullet-list outcomes">
-                        @for (item of section.outcomes; track item) {
-                          <li
-                            [class.actual]="item.startsWith('Actual:')"
-                            [class.potential]="item.startsWith('Potential:')">
-                            {{ item }}
-                          </li>
-                        }
-                      </ul>
-                    </div>
-                  </div>
-                }
-              </div>
-              @if (saveError) {
-                <div class="error-message">
-                  <p>{{ saveError }}</p>
-                </div>
-              }
-              <div class="step-actions">
-                <button class="btn-secondary" (click)="phase = 'preview'">Regenerate</button>
-                <button class="btn-export" [disabled]="saving" (click)="saveAndExport('pdf')">
-                  @if (saving && exportType === 'pdf') {
-                    <span class="spinner-sm"></span>
-                  }
-                  {{ saving && exportType === 'pdf' ? 'Saving...' : 'Save & Export PDF' }}
-                </button>
-                <button class="btn-export" [disabled]="saving" (click)="saveAndExport('docx')">
-                  @if (saving && exportType === 'docx') {
-                    <span class="spinner-sm"></span>
-                  }
-                  {{ saving && exportType === 'docx' ? 'Saving...' : 'Save & Export DOCX' }}
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      }
     </div>
     `,
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -319,16 +190,6 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
       padding: $spacing-xs $spacing-sm;
       border-radius: $border-radius-base;
       &:hover { background: $color-bg-hover; }
-    }
-    .btn-export {
-      @include button-primary;
-      background: $color-success;
-      border-color: $color-success;
-      display: inline-flex;
-      align-items: center;
-      gap: $spacing-xs;
-      &:hover { background: $color-success-text-dark; border-color: $color-success-text-dark; }
-      &:disabled { opacity: 0.6; cursor: not-allowed; }
     }
 
     /* Steps */
@@ -463,8 +324,6 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
       }
     }
 
-    .preview-table tbody tr { cursor: default; }
-
     .date-cell { white-space: nowrap; font-weight: $font-weight-semibold; }
     .hours-cell { font-weight: $font-weight-bold; color: $color-primary; }
     .desc-cell {
@@ -506,25 +365,6 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
       border-top: $border-width-thin solid $color-border-light;
     }
 
-    /* Report meta summary */
-    .report-meta {
-      display: flex;
-      gap: $spacing-2xl;
-      margin-bottom: $spacing-xl;
-      padding: $spacing-base $spacing-xl;
-      background: $color-bg-alt;
-      border-radius: $border-radius-base;
-
-      .meta-item { display: flex; flex-direction: column; gap: $spacing-xs; }
-      .meta-label {
-        font-size: $font-size-sm;
-        text-transform: uppercase;
-        letter-spacing: $letter-spacing-wide;
-        color: $color-text-muted;
-      }
-      .meta-value { font-weight: $font-weight-semibold; }
-    }
-
     /* Generating spinner */
     .generating-state {
       text-align: center;
@@ -539,77 +379,7 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
       border-width: 4px;
     }
 
-    /* Result sections */
-    .result-header {
-      margin-bottom: $spacing-xl;
-      padding-bottom: $spacing-base;
-      border-bottom: $border-width-thin solid $color-border;
-
-      h2 { margin: 0 0 $spacing-xs 0; color: $color-text-primary; }
-      .result-meta {
-        font-size: $font-size-sm;
-        color: $color-text-muted;
-        display: flex;
-        gap: $spacing-sm;
-        align-items: center;
-      }
-      .meta-sep { color: $color-border; }
-    }
-
-    .sections-list {
-      display: flex;
-      flex-direction: column;
-      gap: $spacing-xl;
-      margin-bottom: $spacing-xl;
-    }
-
-    .report-section {
-      padding: $spacing-xl;
-      background: $color-bg-alt;
-      border-radius: $border-radius-base;
-      border-left: 4px solid $color-primary;
-    }
-
-    .project-name {
-      font-size: $font-size-lg;
-      font-weight: $font-weight-bold;
-      color: $color-primary;
-      margin: 0 0 $spacing-base 0;
-    }
-
-    .section-block {
-      margin-bottom: $spacing-base;
-      &:last-child { margin-bottom: 0; }
-    }
-
-    .block-label {
-      font-size: $font-size-sm;
-      font-weight: $font-weight-bold;
-      text-transform: uppercase;
-      letter-spacing: $letter-spacing-wide;
-      color: $color-text-muted;
-      margin: 0 0 $spacing-xs 0;
-    }
-
-    .bullet-list {
-      list-style: disc;
-      padding-left: $spacing-xl;
-      margin: 0;
-      color: $color-text-secondary;
-
-      li {
-        margin-bottom: $spacing-xs;
-        line-height: $line-height-base;
-      }
-
-      &.outcomes {
-        li.actual   { color: $color-success-text; }
-        li.potential { color: $color-primary; }
-      }
-    }
-
     .error-message { @include message-error; margin-bottom: $spacing-base; }
-    .spinner-sm { @include spinner-sm; margin-right: $spacing-xs; }
 
     .loading-state {
       text-align: center;
@@ -626,7 +396,6 @@ import { OutcomeRecord } from '../../models/outcome-record.model';
     @include tablet {
       .steps { flex-wrap: wrap; gap: $spacing-xs; }
       .step-connector { width: 20px; }
-      .report-meta { flex-wrap: wrap; gap: $spacing-base; }
       .date-filters { flex-wrap: wrap; }
     }
   `]
@@ -650,19 +419,13 @@ export class StatusReportGenerateComponent implements OnInit {
   invoiceNumberMap = new Map<string, string>(); // invoiceId → invoiceNumber
 
   currentStep = 1;
-  phase: 'preview' | 'generating' | 'result' = 'preview';
+  generating = false;
   loadingEntries = false;
 
   filterFrom = '';
   filterTo = '';
 
   error = '';
-  saveError = '';
-  saving = false;
-  exportType: 'pdf' | 'docx' = 'pdf';
-
-  generatedSections: StatusReportSection[] = [];
-  priorOutcomes: OutcomeRecord[] = [];
 
   get totalFilteredHours(): number {
     return Math.round(this.filteredEntries.reduce((s, e) => s + e.durationHours, 0) * 100) / 100;
@@ -675,28 +438,6 @@ export class StatusReportGenerateComponent implements OnInit {
   get allSelected(): boolean {
     return this.filteredEntries.length > 0 &&
       this.filteredEntries.every(e => this.isSelected(e));
-  }
-
-  get periodStart(): string {
-    if (!this.selectedEntries.length) return '';
-    return [...this.selectedEntries].map(e => e.date).sort()[0];
-  }
-
-  get periodEnd(): string {
-    if (!this.selectedEntries.length) return '';
-    return [...this.selectedEntries].map(e => e.date).sort().reverse()[0];
-  }
-
-  get avgHoursPerWeek(): number | null {
-    if (!this.allEntries.length) return null;
-    const dates = this.allEntries.map(e => e.date).sort();
-    const inceptionDate = new Date(dates[0] + 'T00:00:00');
-    const today = new Date();
-    const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-    const weeksElapsed = Math.floor((today.getTime() - inceptionDate.getTime()) / msPerWeek);
-    if (weeksElapsed < 1) return null;
-    const totalHours = this.allEntries.reduce((s, e) => s + e.durationHours, 0);
-    return Math.round((totalHours / weeksElapsed) * 10) / 10;
   }
 
   ngOnInit(): void {
@@ -712,6 +453,7 @@ export class StatusReportGenerateComponent implements OnInit {
   goToStep2(): void {
     if (!this.selectedCustomer) return;
     this.currentStep = 2;
+    this.error = '';
     this.loadingEntries = true;
     this.selectedEntries = [];
     this.filterFrom = '';
@@ -734,13 +476,6 @@ export class StatusReportGenerateComponent implements OnInit {
       this.filteredEntries = [...entries];
       this.loadingEntries = false;
     });
-  }
-
-  goToStep3(): void {
-    this.currentStep = 3;
-    this.phase = 'preview';
-    this.error = '';
-    this.saveError = '';
   }
 
   applyFilter(): void {
@@ -797,283 +532,38 @@ export class StatusReportGenerateComponent implements OnInit {
     return `${month}/${day}/${year}`;
   }
 
+  /**
+   * Generates the report with AI, saves it as a draft, and opens it. Every line
+   * item is editable on the report page straight away; exporting is a separate
+   * step there.
+   */
   async generateReport(): Promise<void> {
-    if (!this.selectedCustomer || this.selectedEntries.length === 0) return;
-    this.phase = 'generating';
+    const customer = this.selectedCustomer;
+    if (!customer || this.selectedEntries.length === 0 || this.generating) return;
+    this.generating = true;
     this.error = '';
 
     try {
-      this.priorOutcomes = await this.statusReportService.getOutcomesByCustomer(this.selectedCustomer.id);
-      this.generatedSections = await this.statusReportService.generateWithAI(
-        this.selectedCustomer.companyName,
+      const priorOutcomes = await this.statusReportService.getOutcomesByCustomer(customer.id);
+      const sections = await this.statusReportService.generateWithAI(
+        customer.companyName,
         this.selectedEntries,
         this.projectMap,
-        this.priorOutcomes
+        priorOutcomes
       );
-      this.phase = 'result';
-    } catch (err: any) {
-      this.error = err?.message ?? 'Failed to generate report. Please try again.';
-      this.phase = 'preview';
-    }
-  }
-
-  async saveAndExport(format: 'pdf' | 'docx'): Promise<void> {
-    if (!this.selectedCustomer) return;
-    this.saving = true;
-    this.exportType = format;
-    this.saveError = '';
-
-    try {
       const reportId = await this.statusReportService.saveReport(
-        this.selectedCustomer.id,
-        this.selectedCustomer.companyName,
+        customer.id,
+        customer.companyName,
         this.selectedEntries,
-        this.generatedSections
+        sections
       );
-
-      // Update the cumulative outcomes collection with the merged outcomes from this report
-      await this.statusReportService.upsertOutcomes(this.selectedCustomer.id, this.generatedSections);
-
-      // Build a minimal report object to pass to the export
-      const report = {
-        reportNumber: await this.getReportNumber(reportId),
-        customerName: this.selectedCustomer.companyName,
-        periodStart: this.periodStart,
-        periodEnd: this.periodEnd,
-        sections: this.generatedSections
-      };
-
-      if (format === 'pdf') {
-        await this.exportPDF(report);
-      } else {
-        await this.exportDOCX(report);
-      }
+      // Keep the cumulative outcomes in step with the saved report
+      await this.statusReportService.upsertOutcomes(customer.id, sections);
 
       this.router.navigate(['/status-reports', reportId]);
     } catch (err: any) {
-      this.saveError = err?.message ?? 'Failed to save and export report.';
-      this.saving = false;
+      this.error = err?.message ?? 'Failed to generate report. Please try again.';
+      this.generating = false;
     }
-  }
-
-  private async getReportNumber(reportId: string): Promise<string> {
-    return new Promise(resolve => {
-      this.statusReportService.getStatusReport(reportId).subscribe(r => resolve(r.reportNumber));
-    });
-  }
-
-  async exportPDF(report: {
-    reportNumber: string;
-    customerName: string;
-    periodStart: string;
-    periodEnd: string;
-    sections: StatusReportSection[];
-  }): Promise<void> {
-    const jsPDFModule = await import('jspdf');
-    const jsPDF = jsPDFModule.default ?? jsPDFModule;
-    await import('jspdf-autotable');
-
-    const doc = new jsPDF();
-
-    // Header
-    try {
-      const response = await fetch('assets/nta-logo.jpg');
-      const blob = await response.blob();
-      const base64 = await new Promise<string>(res => {
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-      doc.addImage(base64, 'JPEG', 14, 14, 29, 14);
-    } catch {
-      doc.setFontSize(16);
-      doc.setTextColor(30, 58, 138);
-      doc.text('STATUS REPORT', 14, 22);
-    }
-
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text('Notarangelo Technical Advisory', 14, 33);
-
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text('Report #:', 140, 22);
-    doc.text('Client:', 140, 29);
-    doc.text('Period:', 140, 36);
-
-    doc.setTextColor(30);
-    doc.text(report.reportNumber, 165, 22);
-    doc.text(report.customerName, 165, 29);
-    doc.text(`${this.formatDate(report.periodStart)} – ${this.formatDate(report.periodEnd)}`, 165, 36);
-
-    let yPos = 48;
-
-    for (const section of report.sections) {
-      // Check page overflow
-      if (yPos > 240) { doc.addPage(); yPos = 14; }
-
-      // Project heading band
-      (doc as any).autoTable({
-        startY: yPos,
-        head: [[section.projectName]],
-        body: [],
-        theme: 'plain',
-        headStyles: {
-          fillColor: [30, 58, 138],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 11,
-          cellPadding: 5
-        },
-        margin: { left: 14, right: 14 }
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-
-      // Activities
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text('ACTIVITIES', 14, yPos + 4);
-      yPos += 8;
-
-      for (const activity of section.activities) {
-        if (yPos > 270) { doc.addPage(); yPos = 14; }
-        doc.setFontSize(10);
-        doc.setTextColor(50);
-        const lines = doc.splitTextToSize(`• ${activity}`, 178);
-        doc.text(lines, 18, yPos);
-        yPos += lines.length * 5 + 2;
-      }
-
-      yPos += 4;
-
-      // Outcomes
-      doc.setFontSize(9);
-      doc.setTextColor(100);
-      doc.text('OUTCOMES', 14, yPos + 4);
-      yPos += 8;
-
-      for (const outcome of section.outcomes) {
-        if (yPos > 270) { doc.addPage(); yPos = 14; }
-        doc.setFontSize(10);
-        const isActual = outcome.startsWith('Actual:');
-        doc.setTextColor(isActual ? 16 : 30, isActual ? 185 : 58, isActual ? 129 : 138);
-        const lines = doc.splitTextToSize(`• ${outcome}`, 178);
-        doc.text(lines, 18, yPos);
-        yPos += lines.length * 5 + 2;
-      }
-
-      yPos += 10;
-    }
-
-    doc.save(`${report.reportNumber}.pdf`);
-  }
-
-  async exportDOCX(report: {
-    reportNumber: string;
-    customerName: string;
-    periodStart: string;
-    periodEnd: string;
-    sections: StatusReportSection[];
-  }): Promise<void> {
-    const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, ShadingType } =
-      await import('docx');
-
-    const children: InstanceType<typeof Paragraph>[] = [];
-
-    // Title
-    children.push(new Paragraph({
-      children: [new TextRun({ text: 'STATUS REPORT', bold: true, color: '1E3A8A', size: 32 })],
-      heading: HeadingLevel.TITLE,
-      spacing: { after: 80 }
-    }));
-
-    // Report metadata
-    children.push(new Paragraph({
-      children: [
-        new TextRun({ text: 'Report #: ', bold: true, size: 20 }),
-        new TextRun({ text: report.reportNumber, size: 20 })
-      ],
-      spacing: { after: 40 }
-    }));
-    children.push(new Paragraph({
-      children: [
-        new TextRun({ text: 'Client: ', bold: true, size: 20 }),
-        new TextRun({ text: report.customerName, size: 20 })
-      ],
-      spacing: { after: 40 }
-    }));
-    children.push(new Paragraph({
-      children: [
-        new TextRun({ text: 'Period: ', bold: true, size: 20 }),
-        new TextRun({
-          text: `${this.formatDate(report.periodStart)} – ${this.formatDate(report.periodEnd)}`,
-          size: 20
-        })
-      ],
-      spacing: { after: 360 }
-    }));
-
-    for (const section of report.sections) {
-      // Project heading
-      children.push(new Paragraph({
-        children: [new TextRun({ text: section.projectName, bold: true, color: '1E3A8A', size: 24 })],
-        heading: HeadingLevel.HEADING_1,
-        shading: { type: ShadingType.SOLID, color: 'DBEAFE', fill: 'DBEAFE' },
-        spacing: { before: 240, after: 120 }
-      }));
-
-      // Activities sub-heading
-      children.push(new Paragraph({
-        children: [new TextRun({ text: 'Activities', bold: true, color: '334155', size: 20 })],
-        spacing: { before: 120, after: 60 }
-      }));
-
-      for (const activity of section.activities) {
-        children.push(new Paragraph({
-          children: [new TextRun({ text: activity, size: 20, color: '0F172A' })],
-          bullet: { level: 0 },
-          spacing: { after: 60 }
-        }));
-      }
-
-      // Outcomes sub-heading
-      children.push(new Paragraph({
-        children: [new TextRun({ text: 'Outcomes', bold: true, color: '334155', size: 20 })],
-        spacing: { before: 120, after: 60 }
-      }));
-
-      for (const outcome of section.outcomes) {
-        const isActual = outcome.startsWith('Actual:');
-        children.push(new Paragraph({
-          children: [new TextRun({
-            text: outcome,
-            size: 20,
-            color: isActual ? '065F46' : '1E3A8A'
-          })],
-          bullet: { level: 0 },
-          spacing: { after: 60 }
-        }));
-      }
-
-      children.push(new Paragraph({ text: '', spacing: { after: 120 } }));
-    }
-
-    const docxDocument = new Document({
-      sections: [{
-        properties: {},
-        children
-      }]
-    });
-
-    const blob = await Packer.toBlob(docxDocument);
-    const url = URL.createObjectURL(blob);
-    const a = Object.assign(document.createElement('a'), {
-      href: url,
-      download: `${report.reportNumber}.docx`
-    });
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
   }
 }
