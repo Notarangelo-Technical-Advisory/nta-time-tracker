@@ -129,7 +129,11 @@ Client: ${customerName}
 
 Time entries for this reporting period:${entriesText}${priorOutcomesText}
 For each project listed above, generate:
-1. 3-5 activity bullets describing what was done (past tense, professional, start each with a past-tense verb)
+1. Activity bullets describing what was done (past tense, professional, start each with a past-tense verb). Group the bullets by workstream, not by date or by the order of the entries:
+   - Put all the work on one topic in a single bullet. For example, every entry about the bug fixer agent belongs in one bullet, and every entry about the architect agents belongs in one bullet.
+   - Never join unrelated work in one bullet. A meeting about the backlog and an upgrade to an agent are two different topics and need two bullets.
+   - Use as many bullets as there are topics. A topic with only one entry still gets its own bullet.
+   - Keep every detail that matters from the entries and add nothing that is not in them.
 2. Outcome bullets — prefix each with "Actual:" for outcomes already achieved, or "Potential:" for future outcomes enabled by this work${priorOutcomes && priorOutcomes.length > 0 ? ' (incorporate prior outcomes as instructed above)' : ' (2-3 bullets)'}`;
 
     // Abort the upstream call before the function's 300s ceiling so we can
