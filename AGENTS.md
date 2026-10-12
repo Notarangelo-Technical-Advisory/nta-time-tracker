@@ -32,6 +32,8 @@ This file holds only the rules that belong to this app.
 - There is no self sign-up. A customer joins through an invite link. Only another admin can make an admin.
 - An invite's document ID is its token. Anyone with the link can open that one invite, and only admins can list invites. The invited person may create a customer profile that matches the invite, and mark that invite accepted.
 
+The `generateStatusReport` Cloud Function follows the same rule: it needs a signed-in user whose profile has `role: 'admin'`, because each call spends the Claude API key. Keep that check if you change the function.
+
 `src/app/firestore-rules.spec.ts` checks each of these. Keep it passing when you change the rules.
 
 ## Domain rules

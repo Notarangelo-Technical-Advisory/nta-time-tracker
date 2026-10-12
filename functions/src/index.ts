@@ -1,4 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getApps, initializeApp } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+
+if (getApps().length === 0) initializeApp();
 
 interface TimeEntryInput {
   date: string;
@@ -60,6 +64,16 @@ const STATUS_REPORT_SCHEMA = {
 export const generateStatusReport = onCall<GenerateStatusReportRequest>(
   { cors: true, timeoutSeconds: 300, memory: '512MiB' },
   async (request): Promise<GenerateStatusReportResponse> => {
+    // Each call spends the Claude API key, so only a signed-in admin may call it.
+    // Admins are the users whose profile has role 'admin' (same rule as firestore.rules).
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Sign in to generate a status report.');
+    }
+    const profile = await getFirestore().doc(`userProfiles/${request.auth.uid}`).get();
+    if (profile.data()?.role !== 'admin') {
+      throw new HttpsError('permission-denied', 'Only an admin can generate a status report.');
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       throw new HttpsError('failed-precondition', 'Anthropic API key not configured');
