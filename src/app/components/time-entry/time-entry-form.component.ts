@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -42,12 +43,7 @@ import { Project } from '../../models/project.model';
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label" for="startTime">Start Time <span class="required">*</span></label>
-                <select class="form-control" id="startTime" formControlName="startTime" (ngModelChange)="onTimeChange()">
-                  <option value="">Select start time...</option>
-                  @for (slot of timeSlots; track slot) {
-                    <option [value]="slot.value">{{ slot.label }}</option>
-                  }
-                </select>
+                <input class="form-control" id="startTime" type="time" step="60" formControlName="startTime">
                 @if (form.get('startTime')?.touched && form.get('startTime')?.hasError('required')) {
                   <div class="form-error">
                     Start time is required
@@ -56,12 +52,7 @@ import { Project } from '../../models/project.model';
               </div>
               <div class="form-group">
                 <label class="form-label" for="endTime">End Time <span class="required">*</span></label>
-                <select class="form-control" id="endTime" formControlName="endTime" (ngModelChange)="onTimeChange()">
-                  <option value="">Select end time...</option>
-                  @for (slot of timeSlots; track slot) {
-                    <option [value]="slot.value">{{ slot.label }}</option>
-                  }
-                </select>
+                <input class="form-control" id="endTime" type="time" step="60" formControlName="endTime">
                 @if (form.get('endTime')?.touched && form.get('endTime')?.hasError('required')) {
                   <div class="form-error">
                     End time is required
@@ -274,12 +265,12 @@ export class TimeEntryFormComponent implements OnInit {
   private timeEntryService = inject(TimeEntryService);
   private customerService = inject(CustomerService);
   private projectService = inject(ProjectService);
+  private destroyRef = inject(DestroyRef);
 
   form!: FormGroup;
   customers: Customer[] = [];
   allProjects: Project[] = [];
   filteredProjects: Project[] = [];
-  timeSlots = TimeEntryService.generateTimeSlots();
   calculatedDuration = 0;
 
   isEditMode = false;
@@ -302,7 +293,7 @@ export class TimeEntryFormComponent implements OnInit {
       description: ['']
     });
 
-    this.customerService.getActiveCustomers().subscribe(customers => {
+    this.customerService.getActiveCustomers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(customers => {
       this.customers = customers;
     });
 
@@ -315,10 +306,10 @@ export class TimeEntryFormComponent implements OnInit {
       this.isEditMode = true;
       this.entryId = id;
       this.loading = true;
-      this.timeEntryService.getTimeEntry(id).subscribe(entry => {
+      this.timeEntryService.getTimeEntry(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(entry => {
         if (entry) {
           // Load projects for the entry's customer first
-          this.projectService.getActiveProjectsByCustomer(entry.customerId).subscribe(projects => {
+          this.projectService.getActiveProjectsByCustomer(entry.customerId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(projects => {
             this.filteredProjects = projects;
             this.form.patchValue({
               date: entry.date,
@@ -342,7 +333,7 @@ export class TimeEntryFormComponent implements OnInit {
     this.filteredProjects = [];
 
     if (customerId) {
-      this.projectService.getActiveProjectsByCustomer(customerId).subscribe(projects => {
+      this.projectService.getActiveProjectsByCustomer(customerId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(projects => {
         this.filteredProjects = projects;
       });
     }
