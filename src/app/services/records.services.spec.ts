@@ -91,14 +91,7 @@ describe('Admin records', () => {
       expect(TimeEntryService.calculateDuration('09:00', '10:30')).toBe(1.5);
       expect(TimeEntryService.calculateDuration('09:10', '09:30')).toBe(0.33);
       expect(TimeEntryService.calculateDuration('10:00', '09:00')).toBe(0);
-    });
-
-    it('offers every half hour of the day', () => {
-      const slots = TimeEntryService.generateTimeSlots();
-      expect(slots.length).toBe(48);
-      expect(slots[0]).toEqual({ value: '00:00', label: '12:00 AM' });
-      expect(slots[25]).toEqual({ value: '12:30', label: '12:30 PM' });
-      expect(slots[47]).toEqual({ value: '23:30', label: '11:30 PM' });
+      expect(TimeEntryService.calculateDuration('09:12', '10:05')).toBe(0.88);
     });
   });
 

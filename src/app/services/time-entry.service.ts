@@ -102,20 +102,6 @@ export class TimeEntryService {
     await batch.commit();
   }
 
-  static generateTimeSlots(): { value: string; label: string }[] {
-    const slots: { value: string; label: string }[] = [];
-    for (let h = 0; h < 24; h++) {
-      for (const m of [0, 30]) {
-        const hour24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-        const period = h < 12 ? 'AM' : 'PM';
-        const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-        const label = `${hour12}:${String(m).padStart(2, '0')} ${period}`;
-        slots.push({ value: hour24, label });
-      }
-    }
-    return slots;
-  }
-
   static calculateDuration(startTime: string, endTime: string): number {
     const [startH, startM] = startTime.split(':').map(Number);
     const [endH, endM] = endTime.split(':').map(Number);
