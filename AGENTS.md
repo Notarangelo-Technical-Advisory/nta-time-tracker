@@ -2,7 +2,7 @@
 
 This app follows the shared engineering standards in [`docs/standards/`](docs/standards/README.md), copied from [`engineering-standards`](https://github.com/Notarangelo-Technical-Advisory/engineering-standards) `v1.0.0`. Do not edit `docs/standards/` in this repo. Change the standards repo instead.
 
-This file holds only the rules that belong to this app.
+This file holds only the rules that belong to this app. For the stack, data model, functions and CI, see [`docs/architecture/architecture.md`](docs/architecture/architecture.md).
 
 ## Git and deployment
 
@@ -40,7 +40,7 @@ The `generateStatusReport` Cloud Function follows the same rule: it needs a sign
 
 ### Status reports: a section with no activities is an orphan
 
-Report sections (`StatusReportSection`) are keyed by `projectName`. Activities always come from the reporting period's time entries, grouped by project. Outcomes persist across reports in the `OutcomeRecord` collection, one record per customer and project. That collection is the cumulative record of prior outcomes that is sent to the model.
+Report sections (`StatusReportSection`) are keyed by `projectName`. Activities always come from the reporting period's time entries, grouped by project. Outcomes persist across reports in the `outcomes` collection (`OutcomeRecord` model), one record per customer and project. That collection is the cumulative record of prior outcomes that is sent to the model.
 
 **Rule: a section with no activities is an orphan, not real content.** It appears when a prior `OutcomeRecord` has no matching time entries this period. This happens most often after a project rename leaves an old record under the old name. The model then returns that record as a section with no activities, which repeats outcomes already carried into the active section. `upsertOutcomes` then saves it again, so it comes back in every report.
 
