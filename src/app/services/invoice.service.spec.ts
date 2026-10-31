@@ -1,4 +1,4 @@
-import { canRebillEntry } from './invoice.service';
+import { canRebillEntry, defaultDueDate } from './invoice.service';
 
 describe('canRebillEntry', () => {
   const THIS_INVOICE = 'inv-a';
@@ -27,5 +27,17 @@ describe('canRebillEntry', () => {
   it('does not treat an empty-string invoice link as a match', () => {
     expect(canRebillEntry({ status: 'unbilled', invoiceId: '' }, THIS_INVOICE)).toBe(true);
     expect(canRebillEntry({ status: 'billed', invoiceId: '' }, THIS_INVOICE)).toBe(false);
+  });
+});
+
+describe('defaultDueDate', () => {
+  it('makes a new invoice due 10 days after it is issued (net 10)', () => {
+    expect(defaultDueDate(new Date(2026, 9, 31))).toEqual(new Date(2026, 10, 10));
+  });
+
+  it('does not change the issue date it is given', () => {
+    const issued = new Date(2026, 0, 5);
+    defaultDueDate(issued);
+    expect(issued).toEqual(new Date(2026, 0, 5));
   });
 });

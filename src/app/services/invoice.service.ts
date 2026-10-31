@@ -8,6 +8,16 @@ import { TimeEntry } from '../models/time-entry.model';
 import { TimeEntryService } from './time-entry.service';
 import { FIRESTORE } from '../firebase';
 
+/** Payment terms: an invoice is due this many days after it is issued (net 10). */
+export const PAYMENT_TERMS_DAYS = 10;
+
+/** The default due date for an invoice issued on `issueDate`. */
+export function defaultDueDate(issueDate: Date): Date {
+  const due = new Date(issueDate);
+  due.setDate(due.getDate() + PAYMENT_TERMS_DAYS);
+  return due;
+}
+
 /** Why a single time entry can't be pulled back onto a reopening invoice. */
 export interface ReopenBlocker {
   entryId: string;

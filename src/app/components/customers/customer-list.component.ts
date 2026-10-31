@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { CustomerService } from '../../services/customer.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { ProjectService } from '../../services/project.service';
+import { defaultDueDate } from '../../services/invoice.service';
 import { Customer } from '../../models/customer.model';
 import { Project } from '../../models/project.model';
 
@@ -531,9 +532,7 @@ export class CustomerListComponent implements OnInit {
 
     const today = new Date();
     this.previewIssueDate = this.formatDate(today.toISOString().split('T')[0]);
-    const due = new Date(today);
-    due.setDate(due.getDate() + 30);
-    this.previewDueDate = this.formatDate(due.toISOString().split('T')[0]);
+    this.previewDueDate = this.formatDate(defaultDueDate(today).toISOString().split('T')[0]);
 
     this.timeEntryService.getUnbilledByCustomer(customer.id).subscribe(entries => {
       this.previewLineItems = [];
