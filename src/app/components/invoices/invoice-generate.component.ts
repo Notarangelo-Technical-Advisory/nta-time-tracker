@@ -3,7 +3,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { combineLatest, catchError, of } from 'rxjs';
-import { InvoiceService } from '../../services/invoice.service';
+import { InvoiceService, defaultDueDate } from '../../services/invoice.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { CustomerService } from '../../services/customer.service';
 import { ProjectService } from '../../services/project.service';
@@ -636,9 +636,7 @@ export class InvoiceGenerateComponent implements OnInit {
     // Set default dates
     const today = new Date();
     this.issueDate = today.toISOString().split('T')[0];
-    const due = new Date(today);
-    due.setDate(due.getDate() + 30);
-    this.dueDate = due.toISOString().split('T')[0];
+    this.dueDate = defaultDueDate(today).toISOString().split('T')[0];
   }
 
   selectCustomer(customer: Customer): void {
