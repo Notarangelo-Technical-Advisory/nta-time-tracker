@@ -1,6 +1,6 @@
 # NTA Time Tracker — Agent Instructions
 
-This app follows the shared engineering standards in [`docs/standards/`](docs/standards/README.md), copied from [`engineering-standards`](https://github.com/Notarangelo-Technical-Advisory/engineering-standards) `v1.0.0`. Do not edit `docs/standards/` in this repo. Change the standards repo instead.
+This app follows the shared engineering standards in [`docs/standards/`](docs/standards/README.md), copied from [`engineering-standards`](https://github.com/Notarangelo-Technical-Advisory/engineering-standards) `v1.1.1`. Do not edit `docs/standards/` in this repo. Change the standards repo instead.
 
 This file holds only the rules that belong to this app. For the stack, data model, functions and CI, see [`docs/architecture/architecture.md`](docs/architecture/architecture.md).
 

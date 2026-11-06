@@ -10,6 +10,7 @@ Every change reaches `main` through a pull request. The pull request is a record
 - A pull request needs no review or approval.
 - Never commit directly to `main`. A merge to `main` deploys to production.
 - Run the tests before `git ship`. It does not wait for CI. The deploy job runs the tests again and stops the deploy if they fail.
+- Do not merge a change to `.github/workflows/` while an earlier deploy of the same app is still running. That run's release job then cannot push its tag, because GitHub does not let the workflow token create a tag whose workflow files differ from `main`. The deploy itself still succeeds, and the next run's release includes both changes. This happened to Solomon on 2026-10-07.
 
 ## Commit messages
 
