@@ -35,10 +35,11 @@ These rules apply to every Notarangelo Technical Advisory app. Each section link
 
 - Never commit secrets. Every Firestore rule change has a test.
 - Only an admin can change a role or another user's access.
+- A public hosting site serves every file in its folder. Keep internal files out of it.
 
 ## Documentation ([detail](documentation.md))
 
-- Update `docs/architecture.md` in the same pull request when the stack, data model, rules, functions or CI change.
+- Update `docs/architecture/architecture.md` in the same pull request when the stack, data model, rules, functions or CI change.
 - Write in plain English for readers whose first language is not English.
 
 ## AI features ([detail](ai-features.md))

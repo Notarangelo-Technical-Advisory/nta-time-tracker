@@ -15,6 +15,13 @@
 - Every rule change has a test that shows the right user allowed and the wrong user refused.
 - Rules deploy only through CI.
 
+## Public hosting
+
+- Firebase Hosting serves every file in a site's `public` folder to anyone. Keep internal files, such as business plans, architecture notes and scripts, out of a public folder, or list them in that site's `ignore` list.
+- `ignore` patterns are relative to the `public` folder. In a site whose `public` is `docs`, write `architecture/**`, not `docs/architecture/**`.
+- After a change to a public site, open the URL of one internal file and confirm it returns 404.
+- Do not turn on GitHub Pages for an app repo. It publishes a whole folder with no ignore list, even when the repo is private. PPK's Pages site was switched off on 2026-10-07.
+
 ## Authentication
 
 - Use Firebase Auth. Each route that needs a signed-in user uses `authGuard`. Routes for signed-out users only, such as sign-in and invite links, use `noAuthGuard`.
