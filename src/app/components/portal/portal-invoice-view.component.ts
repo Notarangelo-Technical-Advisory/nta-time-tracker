@@ -1,7 +1,9 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { take } from 'rxjs';
 import { InvoiceService } from '../../services/invoice.service';
+import { CustomerService } from '../../services/customer.service';
 import { Invoice, InvoiceLineItem } from '../../models/invoice.model';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -45,6 +47,9 @@ import autoTable from 'jspdf-autotable';
             <div class="invoice-to">
               <h4>Bill To</h4>
               <p class="customer-name">{{ invoice.customerName }}</p>
+              @if (customerAddress) {
+                <p class="customer-address">{{ customerAddress }}</p>
+              }
             </div>
           </div>
           <div class="invoice-meta">
@@ -182,6 +187,11 @@ import autoTable from 'jspdf-autotable';
         font-size: $font-size-lg;
         color: $color-text-primary;
       }
+
+      .customer-address {
+        white-space: pre-line;
+        font-size: $font-size-sm;
+      }
     }
 
     .invoice-meta {
@@ -284,8 +294,10 @@ import autoTable from 'jspdf-autotable';
 export class PortalInvoiceViewComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private invoiceService = inject(InvoiceService);
+  private customerService = inject(CustomerService);
 
   invoice: Invoice | null = null;
+  customerAddress = '';
   loading = true;
 
   get groupedLineItems(): { projectName: string; items: InvoiceLineItem[] }[] {
@@ -304,8 +316,19 @@ export class PortalInvoiceViewComponent implements OnInit {
       this.invoiceService.getInvoice(id).subscribe(invoice => {
         this.invoice = invoice;
         this.loading = false;
+        this.loadCustomerAddress(invoice.customerId);
       });
     }
+  }
+
+  // The address lives on the customer record, so the invoice looks it up when it opens.
+  // If the lookup fails, the invoice still shows without an address.
+  private loadCustomerAddress(customerId: string): void {
+    if (!customerId) return;
+    this.customerService.getCustomer(customerId).pipe(take(1)).subscribe({
+      next: customer => { this.customerAddress = customer?.address?.trim() || ''; },
+      error: () => { this.customerAddress = ''; }
+    });
   }
 
   formatDate(dateStr: string): string {
@@ -346,6 +369,16 @@ export class PortalInvoiceViewComponent implements OnInit {
     doc.setTextColor(30);
     doc.text(invoice.customerName, 14, 59);
 
+    // Client address, one line per line of the saved address
+    let billToEndY = 59;
+    if (this.customerAddress) {
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      const addressLines: string[] = doc.splitTextToSize(this.customerAddress, 110);
+      doc.text(addressLines, 14, 65);
+      billToEndY = 65 + (addressLines.length - 1) * 5;
+    }
+
     const tableBody: string[][] = [];
     const projectHeaderIndices = new Set<number>();
     for (const group of this.groupedLineItems) {
@@ -357,7 +390,7 @@ export class PortalInvoiceViewComponent implements OnInit {
     }
 
     autoTable(doc, {
-      startY: 68,
+      startY: billToEndY + 9,
       head: [['Hours', 'Rate', 'Amount', '']],
       body: tableBody,
       foot: [
