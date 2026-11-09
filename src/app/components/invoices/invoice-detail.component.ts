@@ -1,7 +1,9 @@
 import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { take } from 'rxjs';
 import { InvoiceService, ReopenBlocker } from '../../services/invoice.service';
+import { CustomerService } from '../../services/customer.service';
 import { Invoice, InvoiceLineItem } from '../../models/invoice.model';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -45,6 +47,9 @@ import autoTable from 'jspdf-autotable';
             <div class="invoice-to">
               <h4>Bill To</h4>
               <p class="customer-name">{{ invoice.customerName }}</p>
+              @if (customerAddress) {
+                <p class="customer-address">{{ customerAddress }}</p>
+              }
             </div>
           </div>
           <div class="invoice-meta">
@@ -313,6 +318,11 @@ import autoTable from 'jspdf-autotable';
         font-size: $font-size-lg;
         color: $color-text-primary;
       }
+
+      .customer-address {
+        white-space: pre-line;
+        font-size: $font-size-sm;
+      }
     }
 
     .invoice-meta {
@@ -510,8 +520,10 @@ export class InvoiceDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private invoiceService = inject(InvoiceService);
+  private customerService = inject(CustomerService);
 
   invoice: Invoice | null = null;
+  customerAddress = '';
   loading = true;
   showCancelConfirm = false;
   cancelling = false;
@@ -554,8 +566,19 @@ export class InvoiceDetailComponent implements OnInit {
       this.invoiceService.getInvoice(id).subscribe(invoice => {
         this.invoice = invoice;
         this.loading = false;
+        this.loadCustomerAddress(invoice.customerId);
       });
     }
+  }
+
+  // The address lives on the customer record, so the invoice looks it up when it opens.
+  // If the lookup fails, the invoice still shows without an address.
+  private loadCustomerAddress(customerId: string): void {
+    if (!customerId) return;
+    this.customerService.getCustomer(customerId).pipe(take(1)).subscribe({
+      next: customer => { this.customerAddress = customer?.address?.trim() || ''; },
+      error: () => { this.customerAddress = ''; }
+    });
   }
 
   getDatePart(description?: string): string {
@@ -655,10 +678,15 @@ export class InvoiceDetailComponent implements OnInit {
     doc.setTextColor(30);
     doc.text(invoice.customerName, 14, 59);
 
-    // Status
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Status: ${invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}`, 140, 52);
+    // Client address, one line per line of the saved address
+    let billToEndY = 59;
+    if (this.customerAddress) {
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      const addressLines: string[] = doc.splitTextToSize(this.customerAddress, 110);
+      doc.text(addressLines, 14, 65);
+      billToEndY = 65 + (addressLines.length - 1) * 5;
+    }
 
     // Summary table
     const summaryData = this.invoiceSummaryRows.map(row => [
@@ -669,7 +697,7 @@ export class InvoiceDetailComponent implements OnInit {
     ]);
 
     autoTable(doc, {
-      startY: 68,
+      startY: billToEndY + 9,
       head: [['Project', 'Total Hours', 'Rate', 'Amount']],
       body: summaryData,
       foot: [
