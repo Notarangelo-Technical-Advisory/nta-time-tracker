@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { take } from 'rxjs';
+import { formatDate } from '../../shared/format';
 import { InvoiceService, ReopenBlocker } from '../../services/invoice.service';
 import { CustomerService } from '../../services/customer.service';
 import { Invoice, InvoiceLineItem } from '../../models/invoice.model';
@@ -593,10 +594,7 @@ export class InvoiceDetailComponent implements OnInit {
     return sep === -1 ? '' : description.slice(sep + 3);
   }
 
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 
   async updateStatus(status: Invoice['status']): Promise<void> {
     if (!this.invoice) return;

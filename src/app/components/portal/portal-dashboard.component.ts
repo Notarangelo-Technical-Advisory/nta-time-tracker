@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { formatDate } from '../../shared/format';
 import { AuthService } from '../../services/auth.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { InvoiceService } from '../../services/invoice.service';
@@ -514,8 +515,5 @@ export class PortalDashboardComponent implements OnInit {
     ) / 100;
   }
 
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 }

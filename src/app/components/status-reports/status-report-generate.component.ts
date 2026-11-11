@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { combineLatest, catchError, of } from 'rxjs';
+import { formatDate } from '../../shared/format';
 import { StatusReportService } from '../../services/status-report.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { CustomerService } from '../../services/customer.service';
@@ -526,11 +527,7 @@ export class StatusReportGenerateComponent implements OnInit {
     return this.invoiceNumberMap.get(invoiceId) ?? invoiceId;
   }
 
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '—';
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 
   /**
    * Generates the report with AI, saves it as a draft, and opens it. Every line

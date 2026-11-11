@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { formatDate } from '../../shared/format';
 import { CustomerService } from '../../services/customer.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { ProjectService } from '../../services/project.service';
@@ -562,10 +563,7 @@ export class CustomerListComponent implements OnInit {
     this.previewCustomer = null;
   }
 
-  private formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  private readonly formatDate = formatDate;
 
   filterCustomers(): void {
     if (!this.searchTerm.trim()) {

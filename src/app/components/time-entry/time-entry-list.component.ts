@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { formatDate, formatTime } from '../../shared/format';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { CustomerService } from '../../services/customer.service';
 import { ProjectService } from '../../services/project.service';
@@ -472,17 +473,8 @@ export class TimeEntryListComponent implements OnInit {
     return this.projectMap.get(projectId) || projectId;
   }
 
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
-
-  formatTime(time24: string): string {
-    const [h, m] = time24.split(':').map(Number);
-    const period = h < 12 ? 'AM' : 'PM';
-    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
-  }
+  readonly formatDate = formatDate;
+  readonly formatTime = formatTime;
 
   filterEntries(): void {
     let result = this.entries;

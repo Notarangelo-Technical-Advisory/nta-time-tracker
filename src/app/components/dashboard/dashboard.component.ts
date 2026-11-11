@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs';
+import { formatDate } from '../../shared/format';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { InvoiceService } from '../../services/invoice.service';
 import { CustomerService } from '../../services/customer.service';
@@ -434,8 +435,5 @@ export class DashboardComponent implements OnInit {
     return this.customerMap.get(customerId) || customerId;
   }
 
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 }
