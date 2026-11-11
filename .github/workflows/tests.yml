@@ -1,0 +1,39 @@
+name: Tests
+
+# Runs on every pull request, and is called by deploy-and-release.yml so a
+# push to main cannot deploy until the tests pass. The job name "Run tests" is
+# the required check in the ruleset on main, so do not rename it.
+on:
+  pull_request:
+  workflow_call:
+
+env:
+  NODE_VERSION: "22"  # Angular 22 needs Node 22.22.3 or later
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm install
+
+      # The functions have no tests, so the type check of the build is their check.
+      - name: Build Cloud Functions
+        run: npm install --prefix functions && npm --prefix functions run build
+
+      # The browser tests run on the Auth and Firestore emulators, using the
+      # Firebase CLI from devDependencies. The Firestore emulator needs Java.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Run browser tests
+        run: npm run test:ci

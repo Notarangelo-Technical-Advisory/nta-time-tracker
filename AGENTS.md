@@ -6,7 +6,10 @@ This file holds only the rules that belong to this app. For the stack, data mode
 
 ## Git and deployment
 
-- Use a branch and `git ship`, as in [`docs/standards/git-and-commits.md`](docs/standards/git-and-commits.md). The pull request needs no review.
+- Use a branch and `git ship`, as in [`docs/standards/git-and-commits.md`](docs/standards/git-and-commits.md).
+- `main` requires one approval from a code owner and a passing `Run tests` check. `.github/CODEOWNERS` names only `@jacknota`. `git ship` merges Jack's own pull requests with `--admin`, so they still need no review.
+- Pull requests from the story agent's bot, `nta-story-agent[bot]`, need Jack's approval and a passing `Run tests` check. A push after the approval cancels it. See [section 8 of the story agent plan](https://github.com/Notarangelo-Technical-Advisory/nta-story-agent/blob/main/docs/Story-Agent.md#8-rules-on-each-repository).
+- `.github/workflows/tests.yml` runs on every pull request: it builds the Cloud Functions and runs `npm run test:ci`. Do not rename its job, `Run tests`, because the ruleset requires it by name.
 - Every merge to `main` deploys to production through `.github/workflows/deploy-and-release.yml`. The workflow has no path filters, so a docs-only change also deploys.
 - Never deploy from a laptop. This also applies to a fix to the Firestore rules.
 
