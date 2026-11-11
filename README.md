@@ -2,6 +2,11 @@
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
 
+## How the app is organized
+
+- [`docs/architecture/architecture.md`](docs/architecture/architecture.md) is the technical reference. It starts with the C4 Context and Container diagrams.
+- [`docs/architecture/context-map.html`](docs/architecture/context-map.html) is the domain-driven design map: the six areas, what each one owns, and how they connect. Open it in a browser, because GitHub shows only its source. It loads nothing from the network.
+
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.

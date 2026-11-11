@@ -5,6 +5,74 @@
 
 NTA Time Tracker records Jack Notarangelo's time for each customer and project, turns unbilled time into invoices, and writes AI status reports. Customers sign in to a read-only portal to see their own projects, time and invoices. The package and build names still say `fta-time-tracker`; the app shows "Notarangelo Technical Advisory".
 
+**For the domain view**, see the [context map](context-map.html): the six areas, the outside systems, and how each pair connects. Open it in a browser, because GitHub shows only its source. This document covers the technical view and does not repeat the context map.
+
+---
+
+## C4 Diagrams
+
+These are the C4 Context and Container views (see `docs/standards/documentation.md`). Navy is a person, blue is this app, and grey is an outside system.
+
+### System Context
+
+```mermaid
+flowchart TB
+  jack(["<b>Jack Notarangelo</b><br/>[Person: admin]<br/>Records time, bills customers"])
+  cust(["<b>Customer</b><br/>[Person: customer]<br/>Joins by invite"])
+  app["<b>NTA Time Tracker</b><br/>[Software system]<br/>Time, invoices, status reports,<br/>customer portal"]
+  maisie["<b>MAISIE</b><br/>[Outside system]<br/>Jack's assistant, jax-assistant"]
+  claude["<b>Claude API</b><br/>[Outside system]"]
+
+  jack -- "Records time, sends invoices,<br/>writes status reports [HTTPS]" --> app
+  cust -- "Reads own projects, time<br/>and invoices [HTTPS]" --> app
+  maisie -- "Reads records; writes<br/>unbilled time [Admin SDK]" --> app
+  app -- "Drafts status reports [HTTPS]" --> claude
+
+  classDef person fill:#1E3A8A,stroke:#0F172A,color:#FFFFFF
+  classDef system fill:#3B82F6,stroke:#1E3A8A,color:#FFFFFF
+  classDef external fill:#64748B,stroke:#334155,color:#FFFFFF
+  class jack,cust person
+  class app system
+  class maisie,claude external
+```
+
+### Containers
+
+MAISIE writes with the Admin SDK, so `firestore.rules` do not check its writes. The web app and the function go through the rules or check the role themselves.
+
+```mermaid
+flowchart TB
+  jack(["<b>Jack Notarangelo</b><br/>[Person: admin]"])
+  cust(["<b>Customer</b><br/>[Person: customer]"])
+  maisie["<b>MAISIE</b><br/>[Outside system]<br/>jax-assistant"]
+
+  subgraph fb ["NTA Time Tracker in Firebase (fta-invoice-tracking)"]
+    web["<b>Web app</b><br/>[Angular 22, Firebase Hosting]<br/>Admin pages and customer portal;<br/>PDF and DOCX export in the browser"]
+    auth["<b>Firebase Auth</b><br/>[Email and password]<br/>Sign-in"]
+    fn["<b>Cloud Function</b><br/>[Node 22, callable]<br/>generateStatusReport"]
+    db[("<b>Firestore</b><br/>[Firebase]<br/>All records; access set by<br/>firestore.rules")]
+  end
+
+  claude["<b>Claude API</b><br/>[Outside system]"]
+
+  jack -- "Uses [HTTPS]" --> web
+  cust -- "Uses the portal [HTTPS]" --> web
+  web -- "Signs in" --> auth
+  web -- "Reads, writes [rxfire, rules]" --> db
+  web -- "Calls [callable, ID token]" --> fn
+  fn -- "Checks admin role [Admin SDK]" --> db
+  fn -- "Prompts [HTTPS]" --> claude
+  maisie -- "Reads; writes unbilled<br/>entries [Admin SDK]" --> db
+
+  classDef person fill:#1E3A8A,stroke:#0F172A,color:#FFFFFF
+  classDef container fill:#3B82F6,stroke:#1E3A8A,color:#FFFFFF
+  classDef external fill:#64748B,stroke:#334155,color:#FFFFFF
+  class jack,cust person
+  class web,auth,fn,db container
+  class maisie,claude external
+  style fb fill:none,stroke:#64748B,stroke-dasharray:5 5
+```
+
 ---
 
 ## Tech Stack
@@ -251,13 +319,14 @@ These were found when this document was written on 2026-10-27. Each needs a deci
 | `src/app/services/invoice.service.ts` | Invoicing, cancel and reopen |
 | `src/testing/emulator-testing.ts` | Test helpers |
 | `.github/workflows/deploy-and-release.yml` | CI/CD |
+| `docs/architecture/context-map.html` | Domain view: areas and connections |
 | `AGENTS.md` | Rules for this app |
 
 ---
 
 ## Keeping This Doc Updated
 
-Update this document in the same pull request as any of these changes (see `docs/standards/documentation.md`):
+Update this document in the same pull request as any of these changes (see `docs/standards/documentation.md`). A change that adds an area, a collection, an outside system or a new connection between areas also updates the [context map](context-map.html).
 
 | Change | Section to update |
 |---|---|
@@ -270,6 +339,8 @@ Update this document in the same pull request as any of these changes (see `docs
 | The Firebase or hosting setup changed | Firebase Configuration |
 | The CI workflow changed | CI/CD Pipeline |
 | A test suite or script added | Testing, Local Development |
+| A type of user or an outside system added or removed | C4 Diagrams: System Context and Containers; context map |
+| A container added or removed, or a connection between containers changed | C4 Diagrams: Containers |
 | A known gap fixed | Known Gaps |
 
 Change the "Last checked against the code" date at the top when you check the whole document.
