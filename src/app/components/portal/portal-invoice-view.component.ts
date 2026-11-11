@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { take } from 'rxjs';
+import { formatDate } from '../../shared/format';
 import { InvoiceService } from '../../services/invoice.service';
 import { CustomerService } from '../../services/customer.service';
 import { Invoice, InvoiceLineItem } from '../../models/invoice.model';
@@ -331,10 +332,7 @@ export class PortalInvoiceViewComponent implements OnInit {
     });
   }
 
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 
   downloadPDF(): void {
     if (!this.invoice) return;

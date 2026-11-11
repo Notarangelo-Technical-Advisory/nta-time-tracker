@@ -2,6 +2,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { formatDate } from '../../shared/format';
 import { StatusReportService } from '../../services/status-report.service';
 import { StatusReport } from '../../models/status-report.model';
 
@@ -213,9 +214,5 @@ export class StatusReportListComponent implements OnInit {
     });
   }
 
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '—';
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 }

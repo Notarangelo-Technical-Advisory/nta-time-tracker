@@ -3,6 +3,7 @@ import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { combineLatest, catchError, of } from 'rxjs';
+import { formatDate, formatTime } from '../../shared/format';
 import { InvoiceService, defaultDueDate } from '../../services/invoice.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { CustomerService } from '../../services/customer.service';
@@ -701,17 +702,8 @@ export class InvoiceGenerateComponent implements OnInit {
     return sep === -1 ? '' : description.slice(sep + 3);
   }
 
-  formatDate(dateStr: string): string {
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
-
-  formatTime(time24: string): string {
-    const [h, m] = time24.split(':').map(Number);
-    const period = h < 12 ? 'AM' : 'PM';
-    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
-  }
+  readonly formatDate = formatDate;
+  readonly formatTime = formatTime;
 
   private buildPreview(): void {
     this.previewLineItems = [];

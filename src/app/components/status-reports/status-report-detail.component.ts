@@ -4,6 +4,7 @@ import { switchMap, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { formatDate } from '../../shared/format';
 import { StatusReportService } from '../../services/status-report.service';
 import { TimeEntryService } from '../../services/time-entry.service';
 import { StatusReport, StatusReportSection } from '../../models/status-report.model';
@@ -525,11 +526,7 @@ export class StatusReportDetailComponent implements OnInit {
     await this.statusReportService.updateStatus(this.report.id, status);
   }
 
-  formatDate(dateStr: string): string {
-    if (!dateStr) return '—';
-    const [year, month, day] = dateStr.split('-');
-    return `${month}/${day}/${year}`;
-  }
+  readonly formatDate = formatDate;
 
   async downloadPDF(): Promise<void> {
     if (!this.report) return;
