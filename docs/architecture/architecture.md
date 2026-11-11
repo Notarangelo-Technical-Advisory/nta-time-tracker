@@ -118,7 +118,7 @@ nta-time-tracker/
 │   └── standards/          # Copy of the shared engineering standards; do not edit here
 ├── firestore.rules         # Security rules
 ├── firestore.indexes.json  # Composite indexes
-└── .github/workflows/      # deploy-and-release.yml
+└── .github/workflows/      # tests.yml, deploy-and-release.yml
 ```
 
 `src/app/components/`:
@@ -239,10 +239,12 @@ A section with no activities is an orphan from an old outcomes record, usually a
 
 `.github/workflows/deploy-and-release.yml` runs on every push to `main`, which means every `git ship`. There is no path filter, so docs-only changes also deploy. Only one deploy runs at a time (`concurrency: deploy-<ref>`).
 
+`.github/workflows/tests.yml` runs on every pull request. Its job, `Run tests`, is the required check in the ruleset on `main`, which also requires one approval from Jack as code owner.
+
 | Job | What it does |
 |---|---|
 | `version` | Works out the next version from the commit subjects (see `docs/standards/git-and-commits.md`). |
-| `test` | Runs alongside `version`. Node 22 and Java 21, then `npm run test:ci` on the emulators. |
+| `test` | Runs alongside `version`. Calls `tests.yml`: Node 22, builds the Cloud Functions, then Java 21 and `npm run test:ci` on the emulators. |
 | `build` | Writes `src/environments/version.ts`, runs `npm run build:prod`, builds the functions, uploads the build. |
 | `deploy` | Installs `firebase-tools@15.6.0`, signs in with Workload Identity Federation as `firebase-adminsdk-fbsvc@fta-invoice-tracking.iam.gserviceaccount.com`, writes `functions/.env`, and runs `firebase deploy --only hosting,firestore,functions`. |
 | `release-notes` | Asks the Claude API (`claude-sonnet-4-6`) for release notes. If the call fails, it groups the commits by type. |
@@ -318,6 +320,7 @@ These were found when this document was written on 2026-10-27. Each needs a deci
 | `src/app/components/status-reports/status-report-detail.component.ts` | Report page and PDF and DOCX export |
 | `src/app/services/invoice.service.ts` | Invoicing, cancel and reopen |
 | `src/testing/emulator-testing.ts` | Test helpers |
+| `.github/workflows/tests.yml` | Tests on every pull request, and before every deploy |
 | `.github/workflows/deploy-and-release.yml` | CI/CD |
 | `docs/architecture/context-map.html` | Domain view: areas and connections |
 | `AGENTS.md` | Rules for this app |
