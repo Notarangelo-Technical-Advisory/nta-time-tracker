@@ -245,8 +245,8 @@ A section with no activities is an orphan from an old outcomes record, usually a
 |---|---|
 | `version` | Works out the next version from the commit subjects (see `docs/standards/git-and-commits.md`). |
 | `test` | Runs alongside `version`. Calls `tests.yml`: Node 22, builds the Cloud Functions, then Java 21 and `npm run test:ci` on the emulators. |
-| `build` | Writes `src/environments/version.ts`, runs `npm run build:prod`, builds the functions, uploads the build. |
-| `deploy` | Installs `firebase-tools@15.6.0`, signs in with Workload Identity Federation as `firebase-adminsdk-fbsvc@fta-invoice-tracking.iam.gserviceaccount.com`, writes `functions/.env`, and runs `firebase deploy --only hosting,firestore,functions`. |
+| `build` | Runs at the same time as `test`. Writes `src/environments/version.ts`, runs `npm run build:prod`, builds the functions, uploads the build. |
+| `deploy` | Waits for `test` and `build`. Installs `firebase-tools@15.6.0`, signs in with Workload Identity Federation as `firebase-adminsdk-fbsvc@fta-invoice-tracking.iam.gserviceaccount.com`, writes `functions/.env`, and runs `firebase deploy --only hosting,firestore,functions`. |
 | `release-notes` | Asks the Claude API (`claude-sonnet-4-6`) for release notes. If the call fails, it groups the commits by type. |
 | `create-release` | Creates the git tag and the GitHub Release. |
 
