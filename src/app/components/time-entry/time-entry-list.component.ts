@@ -1,4 +1,5 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -67,6 +68,15 @@ import { Project } from '../../models/project.model';
           <div class="summary-item unbilled">
             <span class="summary-label">Unbilled</span>
             <span class="summary-value">{{ unbilledHours }} hrs</span>
+          </div>
+          <div class="summary-item unbilled">
+            <span class="summary-label">Unbilled Amount</span>
+            <span class="summary-value unbilled-amount">{{ unbilledAmount | currency }}</span>
+            @if (unbilledWithoutRate > 0) {
+              <span class="summary-note">
+                {{ unbilledWithoutRate }} unbilled {{ unbilledWithoutRate === 1 ? 'entry has' : 'entries have' }} no hourly rate and {{ unbilledWithoutRate === 1 ? 'is' : 'are' }} counted as $0
+              </span>
+            }
           </div>
         </div>
       }
@@ -260,6 +270,11 @@ import { Project } from '../../models/project.model';
         color: $color-text-primary;
       }
 
+      .summary-note {
+        font-size: $font-size-xs;
+        color: $color-text-muted;
+      }
+
       &.unbilled .summary-value {
         color: $color-warning;
       }
@@ -426,12 +441,15 @@ export class TimeEntryListComponent implements OnInit {
   private timeEntryService = inject(TimeEntryService);
   private customerService = inject(CustomerService);
   private projectService = inject(ProjectService);
+  private destroyRef = inject(DestroyRef);
 
   entries: TimeEntry[] = [];
   filteredEntries: TimeEntry[] = [];
   customers: Customer[] = [];
   private customerMap = new Map<string, string>();
   private projectMap = new Map<string, string>();
+  private customerRates = new Map<string, number>();
+  private projectRates = new Map<string, number>();
 
   dateFrom = '';
   dateTo = '';
@@ -445,20 +463,32 @@ export class TimeEntryListComponent implements OnInit {
 
   totalHours = 0;
   unbilledHours = 0;
+  unbilledAmount = 0;
+  unbilledWithoutRate = 0;
 
   ngOnInit(): void {
-    this.customerService.getCustomers().subscribe(customers => {
+    this.customerService.getCustomers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(customers => {
       this.customers = customers;
       this.customerMap.clear();
-      customers.forEach(c => this.customerMap.set(c.id, c.companyName));
+      this.customerRates.clear();
+      customers.forEach(c => {
+        this.customerMap.set(c.id, c.companyName);
+        this.customerRates.set(c.id, c.hourlyRate || 0);
+      });
+      this.filterEntries();
     });
 
-    this.projectService.getProjects().subscribe(projects => {
+    this.projectService.getProjects().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(projects => {
       this.projectMap.clear();
-      projects.forEach(p => this.projectMap.set(p.id, p.projectName));
+      this.projectRates.clear();
+      projects.forEach(p => {
+        this.projectMap.set(p.id, p.projectName);
+        this.projectRates.set(p.id, p.hourlyRate || 0);
+      });
+      this.filterEntries();
     });
 
-    this.timeEntryService.getTimeEntries().subscribe(entries => {
+    this.timeEntryService.getTimeEntries().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(entries => {
       this.entries = entries;
       this.filterEntries();
       this.loading = false;
@@ -497,7 +527,20 @@ export class TimeEntryListComponent implements OnInit {
 
     this.filteredEntries = this.sortEntries(result);
     this.totalHours = Math.round(result.reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
-    this.unbilledHours = Math.round(result.filter(e => e.status === 'unbilled').reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
+    const unbilled = result.filter(e => e.status === 'unbilled');
+    this.unbilledHours = Math.round(unbilled.reduce((sum, e) => sum + e.durationHours, 0) * 100) / 100;
+
+    // Same rule as the invoice: the project rate, else the customer rate, else $0.
+    // Each entry is rounded to the cent, as on the invoice, so the two totals match.
+    const amounts = unbilled.map(e => this.entryAmount(e));
+    this.unbilledAmount = Math.round(amounts.reduce((sum, a) => sum + a.amount, 0) * 100) / 100;
+    this.unbilledWithoutRate = amounts.filter(a => a.rate === 0).length;
+  }
+
+  private entryAmount(entry: TimeEntry): { rate: number; amount: number } {
+    const rate = this.projectRates.get(entry.projectId) || this.customerRates.get(entry.customerId) || 0;
+    const hours = Math.round(entry.durationHours * 100) / 100;
+    return { rate, amount: Math.round(hours * rate * 100) / 100 };
   }
 
   sortBy(column: string): void {
