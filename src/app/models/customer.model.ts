@@ -2,6 +2,7 @@ export interface Customer {
   id: string;
   customerId: string;
   companyName: string;
+  shortName?: string;
   address?: string;
   billablePersonName: string;
   email?: string;

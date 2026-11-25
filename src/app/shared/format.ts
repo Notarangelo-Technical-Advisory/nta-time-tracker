@@ -5,6 +5,12 @@ export function formatDate(dateStr: string | null | undefined): string {
   return `${month}/${day}/${year}`;
 }
 
+/** Builds an export file name as shortName-baseName. A missing or blank short name gives baseName unchanged. */
+export function exportFileName(shortName: string | null | undefined, baseName: string): string {
+  const prefix = shortName?.trim();
+  return prefix ? `${prefix}-${baseName}` : baseName;
+}
+
 /** Turns HH:MM (24-hour) into h:MM AM or h:MM PM. */
 export function formatTime(time24: string): string {
   const [h, m] = time24.split(':').map(Number);
