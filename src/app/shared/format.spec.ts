@@ -1,4 +1,27 @@
-import { formatDate, formatTime } from './format';
+import { exportFileName, formatDate, formatTime } from './format';
+
+describe('exportFileName', () => {
+  it('puts the short name before the file name', () => {
+    expect(exportFileName('Cox', 'INV-2026-014.pdf')).toBe('Cox-INV-2026-014.pdf');
+  });
+
+  it('trims spaces around the short name', () => {
+    expect(exportFileName(' GracePres ', 'RPT-2026-003.docx')).toBe('GracePres-RPT-2026-003.docx');
+  });
+
+  it('keeps the file name unchanged for a missing short name', () => {
+    expect(exportFileName(undefined, 'INV-2026-014.pdf')).toBe('INV-2026-014.pdf');
+    expect(exportFileName(null, 'INV-2026-014.pdf')).toBe('INV-2026-014.pdf');
+  });
+
+  it('keeps the file name unchanged for an empty short name', () => {
+    expect(exportFileName('', 'INV-2026-014.pdf')).toBe('INV-2026-014.pdf');
+  });
+
+  it('keeps the file name unchanged for a short name of only spaces', () => {
+    expect(exportFileName('   ', 'INV-2026-014.pdf')).toBe('INV-2026-014.pdf');
+  });
+});
 
 describe('formatDate', () => {
   it('shows a date as month, day and year', () => {

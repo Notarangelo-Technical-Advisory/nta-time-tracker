@@ -61,6 +61,7 @@ import { Project } from '../../models/project.model';
             <tr>
               <th>ID</th>
               <th>Company</th>
+              <th>Short Name</th>
               <th>Billable Contact</th>
               <th>Email</th>
               <th>Phone</th>
@@ -75,6 +76,14 @@ import { Project } from '../../models/project.model';
               <tr>
                 <td class="customer-id">{{ customer.customerId }}</td>
                 <td class="company-name">{{ customer.companyName }}</td>
+                <td>
+                  @if (customer.shortName) {
+                    <span>{{ customer.shortName }}</span>
+                  }
+                  @if (!customer.shortName) {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
                 <td>{{ customer.billablePersonName }}</td>
                 <td>
                   @if (customer.email) {
@@ -573,6 +582,7 @@ export class CustomerListComponent implements OnInit {
     const term = this.searchTerm.toLowerCase();
     this.filteredCustomers = this.customers.filter(c =>
       c.companyName.toLowerCase().includes(term) ||
+      (c.shortName && c.shortName.toLowerCase().includes(term)) ||
       c.billablePersonName.toLowerCase().includes(term) ||
       c.customerId.toLowerCase().includes(term) ||
       (c.email && c.email.toLowerCase().includes(term))

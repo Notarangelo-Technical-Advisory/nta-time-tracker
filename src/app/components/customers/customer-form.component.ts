@@ -36,6 +36,20 @@ import { Customer } from '../../models/customer.model';
               }
             </div>
             <div class="form-group">
+              <label class="form-label" for="shortName">Short Name <span class="required">*</span></label>
+              <input class="form-control" id="shortName" formControlName="shortName" placeholder="e.g., Acme">
+              @if (form.get('shortName')?.touched && form.get('shortName')?.hasError('required')) {
+                <div class="form-error">
+                  Short name is required
+                </div>
+              }
+              @if (form.get('shortName')?.touched && form.get('shortName')?.hasError('pattern')) {
+                <div class="form-error">
+                  Use letters and numbers only, up to 20
+                </div>
+              }
+            </div>
+            <div class="form-group">
               <label class="form-label" for="address">Address</label>
               <textarea class="form-control" id="address" formControlName="address" rows="2" placeholder="Street, City, State, ZIP"></textarea>
             </div>
@@ -217,6 +231,7 @@ export class CustomerFormComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       companyName: ['', Validators.required],
+      shortName: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9]{1,20}$/)]],
       address: [''],
       billablePersonName: ['', Validators.required],
       email: ['', Validators.email],
@@ -234,6 +249,7 @@ export class CustomerFormComponent implements OnInit {
         if (customer) {
           this.form.patchValue({
             companyName: customer.companyName,
+            shortName: customer.shortName || '',
             address: customer.address || '',
             billablePersonName: customer.billablePersonName,
             email: customer.email || '',
@@ -255,6 +271,7 @@ export class CustomerFormComponent implements OnInit {
 
     const data: Partial<Customer> = {
       companyName: this.form.value.companyName.trim(),
+      shortName: this.form.value.shortName.trim(),
       billablePersonName: this.form.value.billablePersonName.trim(),
       isActive: this.form.value.isActive
     };
