@@ -42,6 +42,7 @@ describe('TimeEntryListComponent summary panel', () => {
     await seedDocument('customers/c-b', { customerId: 'CUST-002', companyName: 'Customer B', isActive: true });
     await seedDocument('projects/p-a1', { projectId: 'PROJ-001', customerId: 'c-a', projectName: 'Uses customer rate', status: 'active' });
     await seedDocument('projects/p-a2', { projectId: 'PROJ-002', customerId: 'c-a', projectName: 'Own rate', hourlyRate: 150, status: 'active' });
+    await seedDocument('projects/p-a3', { projectId: 'PROJ-004', customerId: 'c-a', projectName: 'Low rate', hourlyRate: 10, status: 'active' });
     await seedDocument('projects/p-b1', { projectId: 'PROJ-003', customerId: 'c-b', projectName: 'No rate anywhere', status: 'active' });
   });
 
@@ -70,16 +71,36 @@ describe('TimeEntryListComponent summary panel', () => {
     expect(view.nativeElement.querySelector('.summary-note').textContent).toContain('1 unbilled entry has no hourly rate');
   });
 
-  it('rounds each entry to the cent, as the invoice does', async () => {
-    // 0.88 hours at $100 is $88.00, and 0.33 hours at $100 is $33.00. Together: $121.00.
-    await seedDocument('timeEntries/e1', entry({ durationHours: 0.88 }));
-    await seedDocument('timeEntries/e2', entry({ durationHours: 0.33 }));
+  it('shows "…" and no rate note while the rates are still loading, then the amount', async () => {
+    await seedDocument('timeEntries/e1', entry({ durationHours: 2 }));
 
     const view = await open();
-    await waitFor(() => view.componentInstance.unbilledAmount === 121);
+    const page = view.componentInstance;
+    await waitFor(() => page.ratesLoaded && page.filteredEntries.length === 1);
+
+    // Put the page back in the state where the entries have arrived and the projects have not.
+    (page as any).projectsLoaded = false;
+    page.filterEntries();
+    view.detectChanges();
+    expect(panel(view)['Unbilled Amount']).toBe('…');
+    expect(view.nativeElement.querySelector('.summary-note')).toBeNull();
+
+    (page as any).projectsLoaded = true;
+    view.detectChanges();
+    expect(panel(view)['Unbilled Amount']).toBe('$200.00');
+  });
+
+  it('rounds each entry to the cent, as the invoice does', async () => {
+    // The invoice rounds the hours to 2 places first: 0.333 hours at $10 is 0.33 x $10 = $3.30,
+    // not $3.33. Two such entries: $6.60. Without the rounding the total would be $6.66.
+    await seedDocument('timeEntries/e1', entry({ durationHours: 0.333, projectId: 'p-a3' }));
+    await seedDocument('timeEntries/e2', entry({ durationHours: 0.333, projectId: 'p-a3' }));
+
+    const view = await open();
+    await waitFor(() => view.componentInstance.unbilledAmount === 6.6);
     view.detectChanges();
 
-    expect(panel(view)['Unbilled Amount']).toBe('$121.00');
+    expect(panel(view)['Unbilled Amount']).toBe('$6.60');
     expect(view.nativeElement.querySelector('.summary-note')).toBeNull();
   });
 });

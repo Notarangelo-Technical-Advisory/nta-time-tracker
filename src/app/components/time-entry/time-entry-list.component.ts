@@ -71,8 +71,8 @@ import { Project } from '../../models/project.model';
           </div>
           <div class="summary-item unbilled">
             <span class="summary-label">Unbilled Amount</span>
-            <span class="summary-value unbilled-amount">{{ unbilledAmount | currency }}</span>
-            @if (unbilledWithoutRate > 0) {
+            <span class="summary-value unbilled-amount">{{ ratesLoaded ? (unbilledAmount | currency) : '…' }}</span>
+            @if (ratesLoaded && unbilledWithoutRate > 0) {
               <span class="summary-note">
                 {{ unbilledWithoutRate }} unbilled {{ unbilledWithoutRate === 1 ? 'entry has' : 'entries have' }} no hourly rate and {{ unbilledWithoutRate === 1 ? 'is' : 'are' }} counted as $0
               </span>
@@ -465,6 +465,13 @@ export class TimeEntryListComponent implements OnInit {
   unbilledHours = 0;
   unbilledAmount = 0;
   unbilledWithoutRate = 0;
+  // The amount needs both lists of rates. Until they arrive, the panel shows "…", not a false $0.00.
+  private customersLoaded = false;
+  private projectsLoaded = false;
+
+  get ratesLoaded(): boolean {
+    return this.customersLoaded && this.projectsLoaded;
+  }
 
   ngOnInit(): void {
     this.customerService.getCustomers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(customers => {
@@ -475,6 +482,7 @@ export class TimeEntryListComponent implements OnInit {
         this.customerMap.set(c.id, c.companyName);
         this.customerRates.set(c.id, c.hourlyRate || 0);
       });
+      this.customersLoaded = true;
       this.filterEntries();
     });
 
@@ -485,6 +493,7 @@ export class TimeEntryListComponent implements OnInit {
         this.projectMap.set(p.id, p.projectName);
         this.projectRates.set(p.id, p.hourlyRate || 0);
       });
+      this.projectsLoaded = true;
       this.filterEntries();
     });
 
